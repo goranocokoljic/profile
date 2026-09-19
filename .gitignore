@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+.wrangler/
+
+# generated at build time (prebuild exporter)
+public/build/data.json
+
+# tr-harness stream logs — full transcripts, never committed
+dev-cycle-logs/
+
+# tr-harness working files (the committed analytics live in data/build/site/)
+dev-cycle-analytics/
+!data/build/**
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# logs
+*.log
+npm-debug.log*
