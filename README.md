@@ -7,8 +7,9 @@ GitHub issue, implemented, reviewed and merged autonomously by **tr-harness**.
 
 `issue → branch → implement → build & test → PR → multi-lens review → fix → merge → record`
 
-The five most recent runs, rendered from `data/build/site/tasks.jsonl` by
-`npm run readme:runs` (a unit test checks every row against that file):
+Five recent runs (latest attempt per issue), rendered from
+`data/build/site/tasks.jsonl` by `npm run readme:runs`. A unit test checks
+every row against that file; `/build` always has the full, current record.
 
 <!-- run-table:start -->
 | Issue | Outcome | Review cycles | Findings | Billed | Wall time |

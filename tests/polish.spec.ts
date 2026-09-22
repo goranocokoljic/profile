@@ -35,38 +35,58 @@ async function layoutDefects(page: Page): Promise<string[]> {
   });
 }
 
-// Screenshots differ between operating systems (font rasterising, and Inter
-// is not installed on the Linux CI runner), so the committed baselines are
-// the Windows ones and only Windows compares against them. The layout checks
-// above run everywhere. Run-dependent data is masked: it changes with every
-// harness run.
-const comparesScreenshots = process.platform === 'win32';
-
 for (const path of PAGES) {
   for (const scheme of SCHEMES) {
     for (const width of WIDTHS) {
-      test(`${path} (${scheme}) at ${width}px has no overflow, no clipped text and matches its baseline`, async ({ page }) => {
+      test(`${path} (${scheme}) at ${width}px has no overflow and no clipped text`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: scheme });
         await page.setViewportSize({ width, height: 900 });
         await page.goto(path);
         if (path === '/build') await expect(page.locator('#dashboard .kpis .tile')).toHaveCount(6);
         expect(await layoutDefects(page)).toEqual([]);
-        if (!comparesScreenshots) return;
-        const name = `${slug(path)}-${scheme}-${width}.png`;
-        if (path === '/') {
-          await expect(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('astro-island')] });
-        } else {
-          // The dashboard grows with every run; its layout is checked above.
-          await expect(page).toHaveScreenshot(name, { mask: [page.locator('#dashboard')] });
-        }
       });
     }
   }
 }
 
+// Visual baselines. Screenshots differ between operating systems (font
+// rasterising; Inter is not installed on the Linux CI runner), so the
+// committed baselines are the Windows ones and only Windows compares them.
+// On other platforms these tests are reported as skipped, not passed; the
+// layout checks above run everywhere.
+//
+// The homepage is light only (color-scheme: light; the reference defines no
+// dark palette), so it has light baselines only. The build-record island is
+// masked: its numbers change with every harness run. /build is shot on the
+// frozen Toprope dataset, so the whole dashboard, light and dark, is under
+// the baseline; only the "data updated" time (file mtime) is masked.
+const comparesScreenshots = process.platform === 'win32';
+const SHOTS = [
+  ...WIDTHS.map((width) => ({ path: '/', scheme: 'light' as const, width })),
+  ...SCHEMES.flatMap((scheme) => WIDTHS.map((width) => ({ path: '/build', scheme, width }))),
+];
+
+for (const { path, scheme, width } of SHOTS) {
+  test(`${path} (${scheme}) at ${width}px matches its baseline`, async ({ page }) => {
+    test.skip(!comparesScreenshots, 'baselines are Windows renders; see the comment above');
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.setViewportSize({ width, height: 900 });
+    const name = `${slug(path)}-${scheme}-${width}.png`;
+    if (path === '/') {
+      await page.goto('/');
+      await expect(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('astro-island')] });
+    } else {
+      await page.goto('/build#dataset=toprope');
+      await expect(page.locator('#dashboard .kpis .value').first()).toHaveText('172');
+      await expect(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('#dashboard .asof')] });
+    }
+  });
+}
+
 // WCAG 2.5.5: on touch screens every control that is not a link inside a
-// run of text takes at least 44 × 44 px. Probed with elementFromPoint 20px
-// from the centre in each direction, so it measures the real hit area
+// run of text takes at least 44 × 44 px. Probed with elementFromPoint 21px
+// from the centre in each direction (inside a 44px box, with 1px for the
+// rounding of fractional positions), so it measures the real hit area
 // (the touch-target mixin grows it with ::after), not the box.
 test.describe('touch targets', () => {
   test.use({ hasTouch: true });
@@ -90,7 +110,7 @@ test.describe('touch targets', () => {
             const r = el.getBoundingClientRect();
             const cx = r.left + r.width / 2;
             const cy = r.top + r.height / 2;
-            const probes = [[cx, cy - 20], [cx, cy + 20], [cx - 20, cy], [cx + 20, cy]];
+            const probes = [[cx, cy - 21], [cx, cy + 21], [cx - 21, cy], [cx + 21, cy]];
             const hits = probes.map(([x, y]) => document.elementFromPoint(x, y));
             if (!hits.every((hit) => hit && (hit === el || el.contains(hit)))) {
               misses.push(`${el.tagName.toLowerCase()} "${el.textContent!.trim().slice(0, 30)}" ${Math.round(r.width)}×${Math.round(r.height)}`);
@@ -100,6 +120,9 @@ test.describe('touch targets', () => {
         });
         expect(small.count).toBeGreaterThan(5);
         expect(small.misses).toEqual([]);
+        // The grown dashboard buttons (touch-size) must not break the layout.
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+        expect(await layoutDefects(page)).toEqual([]);
       });
     }
   }
@@ -170,7 +193,10 @@ test('fonts are the system stack, or self-hosted with font-display: swap', async
 // #14 defect: at 125% / 150% display scaling the hero's primary button showed
 // a lighter strip along its bottom edge. Its box started between device
 // pixels, so the edge row was anti-aliased. The outermost device-pixel rows
-// of each control must be exactly its edge colour.
+// of each control must be exactly its edge colour. The header CV link has no
+// fill or border, so its rows guard against one being added off the grid; the
+// header's own 1px rule cannot be crisp at these scales (1px is 1.25 / 1.5
+// device pixels), whatever the layout, so it is not sampled.
 const EDGES = [
   { selector: '.hero .button-primary', edge: 'background-color' },
   { selector: '.hero .button-secondary', edge: 'border-bottom-color' },
@@ -199,6 +225,12 @@ for (const dpr of [1.25, 1.5]) {
         for (const { selector, edge } of EDGES) {
           const el = page.locator(selector);
           const box = (await el.boundingBox())!;
+          if (edge !== 'header') {
+            // The source fix: the button box starts and ends on whole device pixels.
+            for (const css of [box.y, box.y + box.height]) {
+              expect(Math.abs(css * dpr - Math.round(css * dpr)), `${selector} edge at ${css}px`).toBeLessThan(0.01);
+            }
+          }
           const want = rgb(
             edge === 'header'
               ? await page.locator('.site-header').evaluate((h) => getComputedStyle(h).backgroundColor)

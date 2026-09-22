@@ -44,7 +44,9 @@ const { selected } = site;
   }
 
   .selected-link {
-    @include touch-target;
+    // The links sit 41px apart, so an overlay would overlap the next one:
+    // on touch screens they grow instead.
+    @include touch-size;
 
     display: grid;
     grid-template-columns: auto 1fr auto;

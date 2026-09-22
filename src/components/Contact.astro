@@ -66,10 +66,10 @@ const external = [
     gap: 17px;
     padding-top: 10px;
 
-    // 26px links + 18px = 44px from centre to centre, so the grown touch
-    // areas do not overlap.
+    // 26px links + 20px = 46px from centre to centre, so the 44px touch
+    // areas do not overlap (fractional positions round by up to 1px).
     @media (pointer: coarse) {
-      gap: 18px;
+      gap: 20px;
     }
 
     a {
