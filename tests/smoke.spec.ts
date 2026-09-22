@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { site } from '../src/data/site';
 
 for (const path of ['/', '/build']) {
   test(`${path} renders with one h1 and no console errors`, async ({ page }) => {
@@ -37,4 +38,12 @@ test('reference tokens reach the page at runtime', async ({ page }) => {
     getComputedStyle(document.documentElement).getPropertyValue('--teal').trim(),
   );
   expect(teal.toUpperCase()).toBe('#0D8075');
+});
+
+test('homepage h1 is the hero headline from site.ts', async ({ page }) => {
+  await page.goto('/');
+  await expect(page).toHaveTitle(site.pages.home.title);
+  const spans = page.locator('h1 > span');
+  await expect(spans).toHaveText([site.hero.headlineStart, site.hero.headlineEmphasis]);
+  await expect(spans.nth(1)).toHaveClass('headline-emphasis');
 });
