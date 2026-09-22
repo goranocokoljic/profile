@@ -1,0 +1,60 @@
+// Reset and base typography from design-reference/site/styles.css.
+@use 'tokens' as *;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
+.container {
+  width: min(var(--max), calc(100% - #{$gutter-desktop}));
+  margin-inline: auto;
+}
+
+@media (max-width: $bp-tablet) {
+  .container {
+    width: min(100% - #{$gutter-tablet}, var(--max));
+  }
+}
+
+@media (max-width: $bp-phone) {
+  .container {
+    width: calc(100% - #{$gutter-phone});
+  }
+}
+
+// Light only: the reference defines no dark palette, so the page opts out of
+// UA dark styling instead of inventing one.
+:root {
+  color-scheme: light;
+  padding:
+    env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+    env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+}

@@ -36,3 +36,7 @@ desktop.ini
 # logs
 *.log
 npm-debug.log*
+
+# multi-lens review artifacts
+reviews/
+.review-diff.patch
