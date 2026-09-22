@@ -1,17 +1,40 @@
 ---
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
+import '../styles/dashboard.scss';
 
 const { build } = site.pages;
+
+// Written by the prebuild exporter. Embedded in the page rather than fetched:
+// the dashboard makes no runtime requests. `<` is JSON-escaped so recorded
+// text such as "<style>" never reads as markup in the attribute.
+const payload = readFileSync(join(process.cwd(), 'public/build/data.json'), 'utf8').replace(/</g, '\\u003c');
+const copy = JSON.stringify({ datasetLabel: build.datasetLabel, datasets: build.datasets, empty: build.empty });
 ---
 
 <Base title={build.title}>
   <Header />
   <main class="container">
     <h1>{build.heading}</h1>
-    <p>{build.empty}</p>
+    <div id="dashboard" data-dataset="site" data-copy={copy} data-payload={payload}></div>
   </main>
   <Footer />
 </Base>
+
+<script>
+  import { renderDashboard, type DashboardCopy } from '../build/dashboard';
+  import type { Payload } from '../build/types';
+
+  const root = document.getElementById('dashboard');
+  if (root?.dataset.payload && root.dataset.copy) {
+    const payload = JSON.parse(root.dataset.payload) as Payload;
+    const copy = JSON.parse(root.dataset.copy) as DashboardCopy;
+    // The payload is parsed; drop the 600 KB attribute from the live DOM.
+    root.removeAttribute('data-payload');
+    renderDashboard(root, payload, { dataset: root.dataset.dataset ?? 'site', copy });
+  }
+</script>

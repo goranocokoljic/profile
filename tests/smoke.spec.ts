@@ -18,10 +18,10 @@ for (const path of ['/', '/build']) {
   });
 }
 
-test('/build shows the empty state', async ({ page }) => {
+test('/build shows the heading and the build-record dashboard', async ({ page }) => {
   await page.goto('/build');
-  await expect(page.locator('h1')).toHaveText('Build record');
-  await expect(page.locator('main p')).toHaveText('No runs recorded yet.');
+  await expect(page.locator('h1')).toHaveText(site.pages.build.heading);
+  await expect(page.locator('#dashboard .kpis .tile')).toHaveCount(6);
 });
 
 test('viewport allows safe-area layout', async ({ page }) => {

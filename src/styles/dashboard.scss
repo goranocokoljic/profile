@@ -1,0 +1,471 @@
+// Build-record dashboard, ported from design-reference/dashboard/index.html.
+// The dashboard's own variables are kept (the renderer reads them for SVG
+// fills) and mapped onto the site tokens where the site has one. Everything is
+// scoped to .dash, the root renderDashboard() draws into.
+@use 'tokens' as *;
+
+.dash {
+  --page: var(--bg);
+  --surface-1: var(--surface);
+  --text-primary: var(--ink);
+  --text-secondary: var(--muted);
+
+  // The reference's #898781 fails AA on the site's --bg; --muted passes.
+  --text-muted: var(--muted);
+  --grid: var(--fine);
+  --baseline: #c3c2b7;
+  --border: var(--fine);
+  --series-1: var(--teal);
+  --series-2: #1baf7a;
+  --series-3: #eda100;
+  --series-4: #008300;
+  --series-5: #4a3aa7;
+  --series-6: #e34948;
+  --series-7: #e87ba4;
+  --deemph: #c3c2b7;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --sev-critical: #0d366b;
+  --sev-high: #1c5cab;
+  --sev-medium: #2a78d6;
+  --sev-low: #5598e7;
+  --sev-style: #86b6ef;
+  --accent-wash: rgb(13 128 117 / 8%);
+
+  background: var(--page);
+  color: var(--text-primary);
+  font: 14px/1.45 var(--sans);
+  margin: $space-md 0 $space-xl;
+
+  @media (prefers-color-scheme: dark) {
+    // Dark values from the reference, on the site's dark-band tokens.
+    --page: var(--ink);
+    --surface-1: #1b1e22;
+    --text-primary: #fff;
+    --text-secondary: var(--dark-body);
+    --text-muted: var(--dark-meta);
+    --grid: var(--dark-divider);
+    --baseline: var(--dark-rule);
+    --border: rgb(255 255 255 / 10%);
+    --series-1: var(--dark-accent);
+    --series-2: #199e70;
+    --series-3: #c98500;
+    --series-4: #008300;
+    --series-5: #9085e9;
+    --series-6: #e66767;
+    --series-7: #d55181;
+    --deemph: #52514e;
+    --sev-critical: #184f95;
+    --sev-high: #2a78d6;
+    --sev-medium: #5598e7;
+    --sev-low: #86b6ef;
+    --sev-style: #b7d3f6;
+    --accent-wash: rgb(124 214 203 / 12%);
+
+    color-scheme: dark;
+    padding: $space-sm;
+    border-radius: 12px;
+  }
+
+  a {
+    color: var(--series-1);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  button {
+    font: inherit;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 12px;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--accent-wash);
+    }
+  }
+
+  .asof {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    margin-left: auto;
+  }
+
+  .filters {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .seg {
+    display: inline-flex;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+
+    button {
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      padding: 4px 12px;
+      color: var(--text-secondary);
+
+      &:hover {
+        background: var(--accent-wash);
+      }
+
+      &.on {
+        background: var(--accent-wash);
+        color: var(--text-primary);
+        font-weight: 600;
+      }
+    }
+  }
+
+  .filter-label {
+    color: var(--text-muted);
+    font-size: 12.5px;
+  }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+
+    .label {
+      color: var(--text-secondary);
+      font-size: 12.5px;
+    }
+
+    .value {
+      font-size: 26px;
+      font-weight: 620;
+      margin-top: 2px;
+    }
+
+    .sub {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+
+    @media (width <= 980px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .grid-bottom {
+    margin-top: 14px;
+  }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-width: 0;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+
+    h2 {
+      font-size: 14px;
+      font-weight: 650;
+      margin: 0;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+  }
+
+  .tbl-toggle {
+    font-size: 12px;
+    padding: 2px 9px;
+    color: var(--text-muted);
+  }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 2px 0 8px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+
+    .item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sw {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .ln {
+      width: 16px;
+      height: 2.5px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+  }
+
+  .legend-detail {
+    margin-top: 6px;
+  }
+
+  .footnote {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    margin-top: 8px;
+  }
+
+  .chart-body {
+    overflow-x: auto;
+
+    svg {
+      display: block;
+    }
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Chart hit areas are transparent; a stroke shows keyboard focus.
+  rect[tabindex]:focus-visible {
+    outline: none;
+    stroke: var(--text-primary);
+    stroke-width: 2;
+  }
+
+  .scroll-x {
+    overflow-x: auto;
+  }
+
+  .break-all {
+    word-break: break-all;
+  }
+
+  table.data {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+
+    th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 550;
+      font-size: 12px;
+      border-bottom: 1px solid var(--grid);
+      padding: 6px 10px 6px 0;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 1px solid var(--grid);
+      padding: 6px 10px 6px 0;
+      vertical-align: top;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  // Sortable headers and row expanders are buttons, styled as plain text.
+  button.sort,
+  button.expander {
+    font-weight: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 0;
+    text-align: inherit;
+  }
+
+  button.sort:hover {
+    color: var(--text-primary);
+    background: transparent;
+  }
+
+  button.expander {
+    width: 18px;
+  }
+
+  tr.expandable {
+    cursor: pointer;
+
+    &:hover td {
+      background: var(--accent-wash);
+    }
+  }
+
+  tr.detail-row > td {
+    background: color-mix(in srgb, var(--surface-1) 60%, var(--page));
+    padding: 14px 16px;
+  }
+
+  .detail h3 {
+    font-size: 12.5px;
+    font-weight: 650;
+    margin: 12px 0 6px;
+    color: var(--text-secondary);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  .phase-stack {
+    max-width: 720px;
+  }
+
+  .chev {
+    display: inline-block;
+    color: var(--text-muted);
+    width: 14px;
+    transition: transform 0.12s;
+
+    &.open {
+      transform: rotate(90deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+
+    .dot {
+      font-size: 12px;
+    }
+  }
+
+  .mini-bar {
+    background: var(--series-1);
+    height: 8px;
+    border-radius: 0 3px 3px 0;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .sevtag {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .tooltip {
+    position: fixed;
+    z-index: 10;
+    pointer-events: none;
+    display: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+    padding: 8px 11px;
+    font-size: 12.5px;
+    max-width: 300px;
+
+    .tt-title {
+      color: var(--text-muted);
+      font-size: 11.5px;
+      margin-bottom: 4px;
+    }
+
+    .tt-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 2px 0;
+    }
+
+    .tt-key {
+      width: 14px;
+      height: 2.5px;
+      border-radius: 2px;
+      flex: none;
+    }
+
+    .tt-val {
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tt-lab {
+      color: var(--text-secondary);
+    }
+  }
+
+  .empty {
+    color: var(--text-muted);
+    padding: 18px 0;
+    margin: 0;
+  }
+
+  // `hidden` must win over the display rules above (.grid, .empty).
+  [hidden] {
+    display: none;
+  }
+
+  .runs-title {
+    font-size: 15px;
+    font-weight: 650;
+    margin: 22px 0 10px;
+    letter-spacing: normal;
+    line-height: inherit;
+  }
+}
