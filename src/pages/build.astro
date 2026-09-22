@@ -1,10 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+
+const { build } = site.pages;
 ---
 
-<Base title="Build record — Goran Ocokoljić">
+<Base title={build.title}>
   <main class="container">
-    <h1>Build record</h1>
-    <p>No runs recorded yet.</p>
+    <h1>{build.heading}</h1>
+    <p>{build.empty}</p>
   </main>
 </Base>

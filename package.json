@@ -10,11 +10,13 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\"",
-    "test": "playwright test"
+    "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\" && npm run test:unit",
+    "test": "playwright test",
+    "test:unit": "playwright test -c playwright.unit.config.ts"
   },
   "dependencies": {
-    "astro": "^5.18.2"
+    "astro": "^5.18.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
