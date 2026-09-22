@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, test } from 'node:test';
+import { after, afterEach, beforeEach, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -57,6 +57,14 @@ function ghStub({ title = 'record-run script', pr = 30 } = {}) {
 const noGh = () => null;
 const quiet = () => {};
 
+// Hermetic git: no global or system config (signing, hooks, autocrlf) reaches
+// the throwaway repositories, for the test helper or the script under test.
+const configDir = await mkdtemp(path.join(tmpdir(), 'record-run-config-'));
+await writeFile(path.join(configDir, 'gitconfig'), '');
+process.env.GIT_CONFIG_GLOBAL = path.join(configDir, 'gitconfig');
+process.env.GIT_CONFIG_NOSYSTEM = '1';
+after(() => rm(configDir, { recursive: true, force: true }));
+
 function git(cwd, args) {
   const res = spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, ...HUMAN } });
   assert.equal(res.status, 0, `git ${args.join(' ')}: ${res.stderr}`);
@@ -83,9 +91,11 @@ afterEach(async () => {
 describe('recordRun (dry run, --no-push)', () => {
   test('refreshes meta.json and makes exactly one telemetry commit', async () => {
     const before = commitCount(repo);
-    const result = await recordRun({ issue: 13, push: false }, { root: repo, runGh: ghStub(), log: quiet });
+    const gh = ghStub();
+    const result = await recordRun({ issue: 13, push: false }, { root: repo, runGh: gh, log: quiet });
 
     assert.equal(result.status, 'recorded');
+    assert.deepEqual(gh.calls, ['issue list', 'pr list'], 'gh is asked once; the exporter runs offline');
     assert.equal(commitCount(repo), before + 1);
     assert.equal(git(repo, ['log', '-1', '--format=%s']), 'chore(build): record run for #13 (attempt 2, ok, $1,234.57)');
     assert.equal(git(repo, ['log', '-1', '--format=%an <%ae>|%cn <%ce>']), `${AUTHOR.name} <${AUTHOR.email}>|${AUTHOR.name} <${AUTHOR.email}>`);
@@ -154,6 +164,29 @@ describe('recordRun (dry run, --no-push)', () => {
     assert.equal(commitCount(repo), before);
   });
 
+  test('structural check failure: nothing is written or committed', async () => {
+    await writeFile(path.join(repo, SITE, 'tasks.jsonl'), `${await readFile(path.join(FIXTURE, 'tasks.jsonl'), 'utf8')}{not json\n`);
+    git(repo, ['commit', '-q', '-am', 'bad line']);
+    const before = commitCount(repo);
+
+    await assert.rejects(
+      recordRun({ issue: 13, push: false }, { root: repo, runGh: ghStub(), log: quiet }),
+      /structural check failed:\n {2}site\.tasks has 1 unparseable line\(s\)/,
+    );
+    assert.equal(commitCount(repo), before);
+    assert.equal(git(repo, ['status', '--porcelain']), '', 'meta.json is not rewritten');
+  });
+
+  test('meta.json that does not parse is an error, not a one-entry rewrite', async () => {
+    const metaFile = path.join(repo, SITE, 'meta.json');
+    await writeFile(metaFile, '<<<<<<< HEAD\n{}\n');
+    await assert.rejects(recordRun({ issue: 13, push: false }, { root: repo, runGh: ghStub(), log: quiet }), /meta\.json is not valid JSON/);
+    assert.equal(await readFile(metaFile, 'utf8'), '<<<<<<< HEAD\n{}\n');
+
+    await writeFile(metaFile, '[]\n');
+    await assert.rejects(recordRun({ issue: 13, push: false }, { root: repo, runGh: ghStub(), log: quiet }), /meta\.json is not a JSON object/);
+  });
+
   test('push refuses to run off develop, before touching anything', async () => {
     git(repo, ['checkout', '-q', '-b', 'feature/x']);
     const gh = ghStub();
@@ -162,10 +195,82 @@ describe('recordRun (dry run, --no-push)', () => {
     assert.equal(git(repo, ['status', '--porcelain']), '');
   });
 
-  test('push failure is reported after the local commit', async () => {
-    // No `origin` remote in the throwaway repo, so the push fails.
-    await assert.rejects(recordRun({ issue: 13, push: true }, { root: repo, runGh: ghStub(), log: quiet }), /git push/);
-    assert.match(git(repo, ['log', '-1', '--format=%s']), /^chore\(build\): record run for #13/);
+  test('push without a reachable origin fails before touching anything', async () => {
+    const before = commitCount(repo);
+    await assert.rejects(recordRun({ issue: 13, push: true }, { root: repo, runGh: ghStub(), log: quiet }), /git fetch/);
+    assert.equal(commitCount(repo), before);
+    assert.equal(git(repo, ['status', '--porcelain']), '');
+  });
+});
+
+describe('recordRun (push to a local bare origin)', () => {
+  let origin;
+  const remoteHead = () => git(origin, ['rev-parse', 'develop']);
+
+  beforeEach(async () => {
+    origin = await mkdtemp(path.join(tmpdir(), 'record-run-origin-'));
+    git(origin, ['init', '-q', '--bare', '-b', 'develop']);
+    git(repo, ['remote', 'add', 'origin', origin]);
+    git(repo, ['push', '-q', 'origin', 'develop']);
+  });
+
+  afterEach(async () => {
+    await rm(origin, { recursive: true, force: true });
+  });
+
+  test('commits and pushes the record to develop; a second run pushes nothing', async () => {
+    const lines = [];
+    const result = await recordRun({ issue: 13 }, { root: repo, runGh: ghStub(), log: (l) => lines.push(l) });
+
+    assert.equal(result.status, 'recorded');
+    assert.equal(remoteHead(), git(repo, ['rev-parse', 'HEAD']));
+    assert.equal(git(origin, ['log', '-1', '--format=%an|%s', 'develop']), `${AUTHOR.name}|chore(build): record run for #13 (attempt 2, ok, $1,234.57)`);
+    assert.ok(lines.includes('record-run: pushed 1 commit(s) to develop'));
+
+    const pushed = remoteHead();
+    const again = await recordRun({ issue: 13 }, { root: repo, runGh: ghStub(), log: quiet });
+    assert.equal(again.status, 'already-recorded');
+    assert.equal(remoteHead(), pushed);
+  });
+
+  test('a record whose earlier push failed is pushed by the next run, not reported as recorded', async () => {
+    // The earlier run committed but never reached origin (same state as a failed push).
+    await recordRun({ issue: 13, push: false }, { root: repo, runGh: ghStub(), log: quiet });
+    const local = git(repo, ['rev-parse', 'HEAD']);
+    assert.notEqual(remoteHead(), local);
+
+    const result = await recordRun({ issue: 13 }, { root: repo, runGh: ghStub(), log: quiet });
+    assert.equal(result.status, 'pushed');
+    assert.equal(result.message, 'pushed 1 unpushed record commit(s) for #13');
+    assert.equal(git(repo, ['rev-parse', 'HEAD']), local, 'no second commit');
+    assert.equal(remoteHead(), local);
+  });
+
+  test('refuses to publish unpushed commits that are not telemetry records', async () => {
+    await writeFile(path.join(repo, 'wip.txt'), 'work in progress\n');
+    git(repo, ['add', 'wip.txt']);
+    git(repo, ['commit', '-q', '-m', 'wip']);
+    const before = git(repo, ['rev-parse', 'HEAD']);
+    const gh = ghStub();
+
+    await assert.rejects(recordRun({ issue: 13 }, { root: repo, runGh: gh, log: quiet }), /unpushed commits that are not telemetry records/);
+    assert.equal(git(repo, ['rev-parse', 'HEAD']), before);
+    assert.notEqual(remoteHead(), before);
+    assert.deepEqual(gh.calls, []);
+    assert.equal(git(repo, ['status', '--porcelain']), '');
+  });
+
+  test('refuses when local develop is behind origin', async () => {
+    await writeFile(path.join(repo, 'later.txt'), 'merged elsewhere\n');
+    git(repo, ['add', 'later.txt']);
+    git(repo, ['commit', '-q', '-m', 'later']);
+    git(repo, ['push', '-q', 'origin', 'develop']);
+    git(repo, ['checkout', '-q', '-B', 'develop', 'HEAD~1']);
+    const originBefore = remoteHead();
+
+    await assert.rejects(recordRun({ issue: 13 }, { root: repo, runGh: ghStub(), log: quiet }), /behind origin\/develop; pull first/);
+    assert.equal(remoteHead(), originBefore);
+    assert.equal(git(repo, ['status', '--porcelain']), '');
   });
 });
 

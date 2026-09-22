@@ -40,28 +40,36 @@ It does these steps, in order:
 
 1. Finds the task record for `<issue>` in `data/build/site/tasks.jsonl`: the
    given `--attempt`, else the latest attempt. No record → exit 1.
-2. Refreshes the entry for `<issue>` in `data/build/site/meta.json` via `gh`
-   (title, issue URL, merged PR that closes it). Without `gh`, the committed
-   entry is kept and the script says so.
-3. Runs the exporter (`public/build/data.json`, not committed) and a structural
+2. Unless `--no-push`: checks that `develop` is checked out, fetches
+   `origin/develop`, and refuses when local `develop` is behind it ("pull
+   first") or has unpushed commits that are not telemetry records. A repair
+   never publishes someone's unpushed work.
+3. Asks `gh` once for the issue's title, URL and the merged PR that closes it.
+   Without `gh`, the committed `meta.json` entry is kept and the script says so.
+   A `meta.json` that does not parse is an error; it is never rewritten.
+4. Runs the exporter (`public/build/data.json`, not committed) and a structural
    check: every dataset has one array per JSONL file, each count matches its
-   rows, and the site dataset holds the issue's task record. A failed check →
-   exit 1, no commit.
-4. Stages `data/build/site/` and `reports/issue-<n>.md`. If nothing changed, it
-   prints `already recorded: #<issue> attempt <n>` and exits 0. Otherwise it
-   commits only those paths, with the same author and message format as the
+   rows, no JSONL line was skipped as unparseable, and the site dataset holds
+   the issue's task record. A failed check → exit 1; nothing is written or
+   committed. Only after the check passes is `meta.json` written.
+5. Stages `data/build/site/` and `reports/issue-<n>.md`. If something changed,
+   it commits only those paths, with the same author and message format as the
    runner. Other staged work is left alone.
-5. Pushes `HEAD` to `develop`, unless `--no-push`. Without `--no-push` it
-   refuses to start on any branch other than `develop`.
+6. Unless `--no-push`: pushes `HEAD` to `develop` when it is ahead of
+   `origin/develop`. That includes a record commit whose push failed on an
+   earlier run.
 
-Running it twice for the same issue and attempt changes nothing the second
-time. If the push fails, the commit stays local; push it by hand.
+When nothing changed and nothing is waiting to be pushed, it prints
+`already recorded: #<issue> attempt <n>` and exits 0. Running it twice for the
+same issue and attempt changes nothing the second time. With `--no-push` the
+commit stays local; a later run without `--no-push` pushes it.
 
-Exit codes: `0` recorded or already recorded, `1` failed, `2` usage error.
+Exit codes: `0` recorded, pushed or already recorded, `1` failed, `2` usage error.
 
 The dry-run test is `scripts/record-run.test.mjs` (in `npm run test:data`). It
 runs the script against a throwaway git repository seeded from
-`tests/fixtures/record-run/`, with `gh` stubbed and no push.
+`tests/fixtures/record-run/`, with `gh` stubbed. Pushes go only to a local
+bare repository that stands in for `origin`.
 
 ## README paragraph
 

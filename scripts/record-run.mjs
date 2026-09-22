@@ -11,10 +11,10 @@
 // Usage:
 //   node scripts/record-run.mjs <issue> [--attempt n] [--no-push]
 //
-// Exit codes: 0 recorded or already recorded, 1 failed, 2 usage error.
+// Exit codes: 0 recorded, pushed or already recorded, 1 failed, 2 usage error.
 
 import { spawnSync } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -27,7 +27,6 @@ import {
   fetchMeta,
   ghJson,
   readJsonl,
-  readMetaFile,
   writeJson,
 } from './export-build-data.mjs';
 
@@ -74,8 +73,8 @@ export function commitMessage(task) {
 }
 
 // Problems with the exported payload, or [] when it is sound: every dataset has
-// an array per JSONL file whose length matches its count, and the site dataset
-// holds the issue's task record.
+// an array per JSONL file whose length matches its count, no JSONL line was
+// skipped as unparseable, and the site dataset holds the issue's task record.
 export function checkPayload(payload, issue) {
   const problems = [];
   for (const name of Object.keys(DATASETS)) {
@@ -87,6 +86,7 @@ export function checkPayload(payload, issue) {
     for (const key of Object.keys(FILES)) {
       if (!Array.isArray(d[key])) problems.push(`${name}.${key} is not an array`);
       else if (d.files?.[key]?.count !== d[key].length) problems.push(`${name}.${key} count does not match its rows`);
+      if (d.files?.[key]?.skipped) problems.push(`${name}.${key} has ${d.files[key].skipped} unparseable line(s)`);
     }
   }
   if (!payload?.datasets?.site?.tasks?.some?.((t) => t?.issue === issue)) {
@@ -109,10 +109,41 @@ function git(root, args, env = {}) {
 
 const exists = (file) => access(file).then(() => true, () => false);
 
-// Runs the repair. Returns { status, message } where status is 'recorded' or
-// 'already-recorded'; throws on any failure (nothing is committed then).
-// `runGh` is ghJson; `log` receives progress lines. Tests pass stubs and a
-// temporary repository as `root`.
+// The committed meta.json. Unlike the exporter's tolerant reader, a file that
+// exists but does not parse is an error: rewriting it would drop every entry.
+async function readMetaStrict(file) {
+  if (!(await exists(file))) return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(await readFile(file, 'utf8'));
+  } catch (err) {
+    throw new Error(`${META_FILE} is not valid JSON (${err.message}); fix it first`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(`${META_FILE} is not a JSON object; fix it first`);
+  return parsed;
+}
+
+// With push on, local develop must contain origin/develop, and anything it has
+// on top must be telemetry records (a record whose push failed earlier), so a
+// repair never publishes someone's unpushed work.
+function checkPushBase(root) {
+  const branch = git(root, ['rev-parse', '--abbrev-ref', 'HEAD']);
+  if (branch !== BRANCH) throw new Error(`on branch ${branch}; check out ${BRANCH} or pass --no-push`);
+  git(root, ['fetch', '-q', 'origin', BRANCH]);
+  if (git(root, ['rev-list', '--count', `HEAD..origin/${BRANCH}`]) !== '0') {
+    throw new Error(`local ${BRANCH} is behind origin/${BRANCH}; pull first`);
+  }
+  const ahead = git(root, ['log', '--format=%ae', `origin/${BRANCH}..HEAD`]).split('\n').filter(Boolean);
+  if (ahead.some((email) => email !== AUTHOR.email)) {
+    throw new Error(`local ${BRANCH} has unpushed commits that are not telemetry records; push or drop them first`);
+  }
+}
+
+// Runs the repair. Returns { status, message } where status is 'recorded'
+// (committed), 'pushed' (nothing new, but an earlier record commit was still
+// unpushed) or 'already-recorded'. Throws on any failure; nothing is written
+// or committed before the structural check passes. `runGh` is ghJson; `log`
+// receives progress lines. Tests pass stubs and a temporary repository as `root`.
 export async function recordRun({ issue, attempt = null, push = true }, { root = ROOT, runGh = ghJson, log = console.log } = {}) {
   const siteDir = path.join(root, DATASETS.site.dir);
   const { rows: tasks } = await readJsonl(path.join(siteDir, FILES.tasks));
@@ -120,46 +151,50 @@ export async function recordRun({ issue, attempt = null, push = true }, { root =
   if (!task) {
     throw new Error(`no task record for #${issue}${attempt === null ? '' : ` attempt ${attempt}`} in ${DATASETS.site.dir}/${FILES.tasks}`);
   }
-
-  if (push) {
-    const branch = git(root, ['rev-parse', '--abbrev-ref', 'HEAD']);
-    if (branch !== BRANCH) throw new Error(`on branch ${branch}; check out ${BRANCH} or pass --no-push`);
-  }
+  if (push) checkPushBase(root);
 
   // 1. meta.json for this issue. Without gh the committed entry is kept.
   const metaFile = path.join(siteDir, META_FILE);
+  const meta = await readMetaStrict(metaFile);
   const live = fetchMeta([issue], runGh);
   if (live === null) log(`record-run: gh is unavailable or failed; ${META_FILE} left unchanged.`);
   else if (!live[issue]) log(`record-run: gh does not list issue #${issue}; ${META_FILE} left unchanged.`);
-  else await writeJson(metaFile, { ...(await readMetaFile(metaFile)), [issue]: live[issue] }, { pretty: true });
+  const nextMeta = live?.[issue] ? { ...meta, [issue]: live[issue] } : null;
 
-  // 2. Exporter and structural check. The payload itself is gitignored.
-  const payload = await buildPayload({ root, runGh });
-  await writeJson(path.join(root, OUT_FILE), payload);
+  // 2. Exporter and structural check. gh was asked once above, so the exporter
+  // runs offline and gets the refreshed meta. The payload itself is gitignored.
+  const payload = await buildPayload({ root, runGh: () => null });
+  if (nextMeta) payload.datasets.site.meta = nextMeta;
   const problems = checkPayload(payload, issue);
   if (problems.length) throw new Error(`structural check failed:\n  ${problems.join('\n  ')}`);
+  if (nextMeta) await writeJson(metaFile, nextMeta, { pretty: true });
+  await writeJson(path.join(root, OUT_FILE), payload);
 
   // 3. Commit only when something changed.
   const report = `reports/issue-${issue}.md`;
   const paths = [DATASETS.site.dir, ...((await exists(path.join(root, report))) ? [report] : [])];
   git(root, ['add', '--', ...paths]);
-  if (!git(root, ['status', '--porcelain', '--', ...paths])) {
-    return { status: 'already-recorded', message: `already recorded: #${issue} attempt ${task.attempt}` };
-  }
+  const changed = git(root, ['status', '--porcelain', '--', ...paths]) !== '';
   const message = commitMessage(task);
-  git(root, ['commit', '-q', '-m', message, '--', ...paths], {
-    GIT_AUTHOR_NAME: AUTHOR.name,
-    GIT_AUTHOR_EMAIL: AUTHOR.email,
-    GIT_COMMITTER_NAME: AUTHOR.name,
-    GIT_COMMITTER_EMAIL: AUTHOR.email,
-  });
-  log(`record-run: committed "${message}"`);
-
-  if (push) {
-    git(root, ['push', '-q', 'origin', `HEAD:${BRANCH}`]);
-    log(`record-run: pushed to ${BRANCH}`);
+  if (changed) {
+    git(root, ['commit', '-q', '-m', message, '--', ...paths], {
+      GIT_AUTHOR_NAME: AUTHOR.name,
+      GIT_AUTHOR_EMAIL: AUTHOR.email,
+      GIT_COMMITTER_NAME: AUTHOR.name,
+      GIT_COMMITTER_EMAIL: AUTHOR.email,
+    });
+    log(`record-run: committed "${message}"`);
   }
-  return { status: 'recorded', message };
+
+  // 4. Push this commit and any record commit an earlier failed push left behind.
+  const pending = push ? Number(git(root, ['rev-list', '--count', `origin/${BRANCH}..HEAD`])) : 0;
+  if (pending) {
+    git(root, ['push', '-q', 'origin', `HEAD:${BRANCH}`]);
+    log(`record-run: pushed ${pending} commit(s) to ${BRANCH}`);
+  }
+  if (changed) return { status: 'recorded', message };
+  if (pending) return { status: 'pushed', message: `pushed ${pending} unpushed record commit(s) for #${issue}` };
+  return { status: 'already-recorded', message: `already recorded: #${issue} attempt ${task.attempt}` };
 }
 
 async function main(argv) {
@@ -174,7 +209,7 @@ async function main(argv) {
   }
   try {
     const result = await recordRun(opts);
-    if (result.status === 'already-recorded') console.log(`record-run: ${result.message}`);
+    if (result.status !== 'recorded') console.log(`record-run: ${result.message}`);
   } catch (err) {
     console.error(`record-run: ${err.message}`);
     process.exitCode = 1;
