@@ -32,10 +32,11 @@
   }
 
   // 30px in the reference, which shows no values. Five columns in half a
-  // container leave ~80px each, so the size follows the card's width.
+  // container leave ~80px each, so the size follows the card's width, with
+  // room for wider fallback fonts when Inter is not installed.
   dd {
     margin: 10px 0 0;
-    font-size: clamp(14px, 4.2cqi, 30px);
+    font-size: clamp(14px, 3.8cqi, 30px);
     white-space: nowrap;
   }
 }
