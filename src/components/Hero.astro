@@ -80,6 +80,9 @@ const { hero, markup } = site;
     width: fit-content;
     background: linear-gradient(100deg, var(--gradient-start), var(--gradient-end));
     color: transparent;
+    // Chromium < 120 and older WebKit only know the prefixed form; without it
+    // the transparent text would be invisible there.
+    -webkit-background-clip: text;
     background-clip: text;
   }
 

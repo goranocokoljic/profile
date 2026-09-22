@@ -1,12 +1,13 @@
 ---
+import Monogram from './Monogram.astro';
 import { site } from '../data/site';
 
-const { contact, markup } = site;
+const { contact } = site;
 ---
 
 <footer class="site-footer">
   <div class="container footer-row">
-    <a class="monogram" href="/#top" aria-label={markup.homeLabel}>{markup.monogram}<span>.</span></a>
+    <Monogram inverse />
     <span>{contact.footer}</span>
   </div>
 </footer>
@@ -28,17 +29,6 @@ const { contact, markup } = site;
     justify-content: space-between;
     color: #8f979b;
     font-size: $type-label;
-  }
-
-  .monogram {
-    color: white;
-    font-weight: 800;
-    font-size: $type-h3;
-    letter-spacing: -0.065em;
-
-    span {
-      color: var(--teal);
-    }
   }
 
   @media (max-width: $bp-phone) {

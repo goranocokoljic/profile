@@ -7,6 +7,9 @@
 
 html {
   scroll-behavior: smooth;
+
+  // Anchor targets land below the sticky header, not under it.
+  scroll-padding-top: calc(#{$header-height} + env(safe-area-inset-top, 0px));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -39,6 +42,10 @@ a {
 }
 
 @media (max-width: $bp-tablet) {
+  html {
+    scroll-padding-top: calc(#{$header-height-tablet} + env(safe-area-inset-top, 0px));
+  }
+
   .container {
     width: min(100% - #{$gutter-tablet}, var(--max));
   }
