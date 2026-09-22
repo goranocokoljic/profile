@@ -10,6 +10,8 @@ const text = z.string().min(1);
 const pair = z.tuple([text, text]);
 
 const titled = z.strictObject({ title: text, body: text });
+// An image's text alternative and its visible caption.
+const figure = z.strictObject({ alt: text, caption: text });
 
 const nav = z.strictObject({
   work: text,
@@ -178,6 +180,10 @@ const markup = z.strictObject({
   newTabLabel: text,
   // PureContext tool names the reference hard-codes as pills on the context card.
   changeSafetyLoop: z.array(text).min(1),
+  // The three VisMedic archive screenshots. Keyed, not a list: the component
+  // pairs each key with its image and the grid lays out exactly three figures.
+  vismedicArchive: z.strictObject({ consultation: figure, booking: figure, calendar: figure }),
+  vismedicAward: figure,
 });
 
 export const SiteSchema = z.strictObject({

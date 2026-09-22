@@ -110,6 +110,12 @@ export const site = SiteSchema.parse({
     cvHref:'/goran-ocokoljic-cv.pdf',
     pureContextHref:'https://github.com/goranocokoljic/pure-context',
     newTabLabel:'(opens in a new tab)',
-    changeSafetyLoop:['prepare_change','edit','verify_change','compare_change_impact']
+    changeSafetyLoop:['prepare_change','edit','verify_change','compare_change_impact'],
+    vismedicArchive:{
+      consultation:{alt:'VisMedic doctor consultation workspace',caption:'Doctor consultation workspace'},
+      booking:{alt:'VisMedic patient booking and medical documentation screen',caption:'Patient booking and records'},
+      calendar:{alt:'VisMedic doctor calendar',caption:'Doctor calendar'}
+    },
+    vismedicAward:{alt:'Goran holding the Get in the Ring Serbia award in 2016',caption:'Get in the Ring Serbia · 2016'}
   }
 });
