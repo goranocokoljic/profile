@@ -96,7 +96,9 @@ test('the toggle shows and hides the last 5 runs', async ({ page }) => {
   await expect(runs.locator('thead th')).toHaveText([card.columns.issue, card.columns.outcome, card.columns.billed]);
   const rows = await runs.locator('tbody tr').evaluateAll((trs) => trs.map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent)));
   expect(rows).toEqual(recent.map((t) => [`#${t.issue}`, t.outcome, fmtUsd(t.billed_cost_usd)]));
-  expect(await runs.getAttribute('id')).toBe(await hide.getAttribute('aria-controls'));
+  const controls = await hide.getAttribute('aria-controls');
+  expect(controls).toBeTruthy();
+  await expect(runs).toHaveAttribute('id', controls!);
 
   await hide.press('Enter');
   await expect(runs).toBeHidden();
@@ -228,6 +230,7 @@ const PARTS: [string, string, string][] = [
   ['step number', '.build-pipeline span', '.build-pipeline span'],
   ['mid', '.build-story-mid', '.build-story-mid'],
   ['card', '.task-trail', '.task-trail'],
+  ['card label', '.task-trail .mono-label', '.task-trail > .mono-label'],
   ['card title', '.task-trail h3', '.task-trail h3'],
   ['card note', '.task-trail > p', '.task-trail > p'],
   ['kpi label', '.glance-metrics span', '.task-trail dt'],
@@ -248,6 +251,9 @@ for (const width of [1440, 390]) {
     for (const [name, refSel] of PARTS) ref[name] = await styleOf(page, refSel);
     await page.goto('/');
     for (const [name, , ourSel] of PARTS) expect(await styleOf(page, `#build-story ${ourSel}`.trim()), name).toEqual(ref[name]);
+    // The island's latest-run label uses the same global .mono-label type.
+    const label = trail(page).locator('p .mono-label');
+    for (const p of ['font-family', 'font-size', 'font-weight']) await expect(label).toHaveCSS(p, await trail(page).locator(':scope > .mono-label').evaluate((el, q) => getComputedStyle(el).getPropertyValue(q), p));
     // Five KPI columns on desktop, one on a phone, as the reference's .glance-metrics.
     expect(await page.locator('#build-story dl').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(width === 1440 ? 5 : 1);
   });
