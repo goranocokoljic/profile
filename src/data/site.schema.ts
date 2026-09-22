@@ -173,6 +173,11 @@ const markup = z.strictObject({
   platformDiagramSummary: text,
   // Site-relative file path, e.g. /goran-ocokoljic-cv.pdf.
   cvHref: z.string().regex(/^\/[\w.-]+(\/[\w.-]+)*$/),
+  pureContextHref: z.url({ protocol: /^https$/ }),
+  // Visually hidden suffix on links that open in a new tab.
+  newTabLabel: text,
+  // PureContext tool names the reference hard-codes as pills on the context card.
+  changeSafetyLoop: z.array(text).min(1),
 });
 
 export const SiteSchema = z.strictObject({
