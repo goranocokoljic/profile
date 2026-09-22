@@ -55,6 +55,7 @@ anything failed. Pass `-StopOnFail` to stop at the first failure instead.
 | `-StopOnFail`    | switch               | off      | Legacy behaviour: stop the whole run at the first failed item instead of quarantining it — see [Failure quarantine](#failure-quarantine). |
 | `-MaxConsecutiveFails` | `int` `1`–`100` | `3`     | Quarantine circuit breaker: this many **consecutive** item failures aborts the run (a systemic problem would otherwise burn a paid run per remaining item). Successes reset the counter. |
 | `-NoGraduate`    | switch               | off      | Skip the [KB graduation review](#the-kb-graduation-review) that runs after the whole queue completes successfully. |
+| `-NoPublish`     | switch               | off      | Do not commit+push `data/build/site/*.jsonl` to `develop` after each attempt (see [Analytics](#analytics--databuildsite-jsonl-committed)). |
 | `-GraduateOnly`  | switch               | off      | Run **only** the KB graduation review — no dev-cycle runs, no panel. The issue list may be omitted. |
 
 ### Examples
@@ -66,6 +67,7 @@ anything failed. Pass `-StopOnFail` to stop at the first failure instead.
 ./tr-harness.ps1 6 7 8 -Panel               # force panel in WebStorm terminal
 ./tr-harness.ps1 6 7 8 -NoPanel             # plain streaming
 ./tr-harness.ps1 6 7 8 -NoWaitForReset      # fail fast on a usage limit instead of waiting
+./tr-harness.ps1 6 7 8 -NoPublish           # keep the run record on disk only
 ./tr-harness.ps1 6 7 8 -NoGraduate          # skip the post-run KB graduation review
 ./tr-harness.ps1 -GraduateOnly              # just review/graduate KB lessons, no runs
 ```
@@ -211,6 +213,13 @@ full record of everything the model did. Gitignored.
 
 ### Analytics — `data/build/site/` (JSONL, committed)
 Written once per attempt, separate from the stream logs, for analysis.
+
+After every attempt (any outcome) the runner commits `tasks.jsonl`, `review-cycles.jsonl`
+and `epics.jsonl` straight to `develop` and pushes, as author **tr-harness telemetry**
+with message `chore(build): record run for #<issue> (attempt <n>, <outcome>, $<billed>)`.
+It uses git plumbing against `origin/develop`, so the checked-out branch and working
+tree are never touched; a failed attempt's dirty feature branch stays as it was. A push
+that fails is logged and the record stays on disk. `-NoPublish` turns this off.
 
 **`tasks.jsonl`** — one record per issue run:
 

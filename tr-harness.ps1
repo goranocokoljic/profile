@@ -38,6 +38,7 @@
 #   ./tr-harness.ps1 150 151 152 -Fresh     # re-run every item, ignoring the resume-skip
 #   ./tr-harness.ps1 6 7 8 -NoWaitForReset  # don't sleep through usage limits (see below)
 #   ./tr-harness.ps1 6 7 8 -NoGraduate      # skip the post-run KB graduation review
+#   ./tr-harness.ps1 6 7 8 -NoPublish       # do not commit+push the analytics files after each attempt
 #   ./tr-harness.ps1 -GraduateOnly          # just the KB graduation review, no runs
 #   ./tr-harness.ps1 6 7 8 -StopOnFail      # legacy: stop the run at the first failure
 #
@@ -136,6 +137,10 @@ param(
     # Skip the interactive KB graduation review that runs after the whole queue
     # completes successfully.
     [switch]$NoGraduate,
+
+    # Do not commit+push the analytics files (data/build/site/*.jsonl) to develop
+    # after each attempt. Default is to publish, so the run record has git history.
+    [switch]$NoPublish,
 
     # Disable the convergence guard (scripts/dev-cycle/loop-check.mjs) that runs
     # after each completed item. The guard detects fix-of-fix loop signatures —
@@ -597,6 +602,72 @@ function Write-EpicRollup {
         }
     }
     Add-Content -Path $epicsJsonl -Value ($rec | ConvertTo-Json -Depth 6 -Compress)
+}
+
+# Commit the analytics files to develop after every attempt, whatever the
+# outcome, so the run record has git history (one 'tr-harness telemetry' commit
+# per attempt; the README explains these are records, not code changes).
+#
+# Built with git plumbing against origin/develop so it never touches the working
+# tree, the index or the checked-out branch: a failed attempt can leave the
+# agent's feature branch checked out and dirty, and a resume must find it that
+# way. The local develop ref is moved along only when it still equals the base.
+# Never fatal — on any error the record stays on disk and the queue continues.
+function Publish-Analytics {
+    param([int]$Issue, [int]$Attempt, [string]$Outcome, [double]$BilledUsd)
+    if ($NoPublish) { return }
+
+    $names = @('tasks.jsonl', 'review-cycles.jsonl', 'epics.jsonl') | Where-Object { Test-Path (Join-Path $analyticsDir $_) }
+    if (-not $names) { return }
+    $rel = 'data/build/site'
+    $msg = 'chore(build): record run for #{0} (attempt {1}, {2}, ${3:N2})' -f $Issue, $Attempt, $Outcome, $BilledUsd
+    $tmpIndex = Join-Path ([IO.Path]::GetTempPath()) ('tr-harness-index-' + [IO.Path]::GetRandomFileName())
+    $gitEnv = 'GIT_INDEX_FILE', 'GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL'
+
+    try {
+        for ($try = 1; $try -le 2; $try++) {
+            git -C $PSScriptRoot fetch -q origin develop 2>$null
+            if ($LASTEXITCODE -ne 0) { Write-Log '    telemetry: fetch failed; record kept on disk only' 'Yellow'; return }
+            $base = (git -C $PSScriptRoot rev-parse origin/develop).Trim()
+
+            # Build a tree = origin/develop + the current analytics files.
+            $env:GIT_INDEX_FILE = $tmpIndex
+            git -C $PSScriptRoot read-tree $base
+            foreach ($f in $names) {
+                $blob = (git -C $PSScriptRoot hash-object -w (Join-Path $analyticsDir $f)).Trim()
+                git -C $PSScriptRoot update-index --add --cacheinfo "100644,$blob,$rel/$f"
+            }
+            $tree = (git -C $PSScriptRoot write-tree).Trim()
+            Remove-Item Env:GIT_INDEX_FILE
+            if ($tree -eq (git -C $PSScriptRoot rev-parse "$base^{tree}").Trim()) { return }   # already recorded
+
+            $env:GIT_AUTHOR_NAME = 'tr-harness telemetry'; $env:GIT_AUTHOR_EMAIL = 'telemetry@tr-harness.noreply'
+            $env:GIT_COMMITTER_NAME = $env:GIT_AUTHOR_NAME; $env:GIT_COMMITTER_EMAIL = $env:GIT_AUTHOR_EMAIL
+            $commit = (git -C $PSScriptRoot commit-tree $tree -p $base -m $msg).Trim()
+            foreach ($v in $gitEnv) { if (Test-Path "Env:$v") { Remove-Item "Env:$v" } }
+
+            git -C $PSScriptRoot push -q origin "${commit}:refs/heads/develop" 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                # Move the local develop ref along when it has not diverged; if it is
+                # the checked-out branch, re-sync the index for these paths only.
+                if ((git -C $PSScriptRoot rev-parse --verify -q develop).Trim() -eq $base) {
+                    git -C $PSScriptRoot update-ref refs/heads/develop $commit $base
+                    if ((git -C $PSScriptRoot rev-parse --abbrev-ref HEAD).Trim() -eq 'develop') {
+                        git -C $PSScriptRoot reset -q -- $rel 2>$null
+                    }
+                }
+                Write-Log ("    telemetry: {0} -> develop ({1})" -f $commit.Substring(0, 7), $msg) 'DarkGray'
+                return
+            }
+            # Push rejected: someone pushed in between. Refetch and rebuild once.
+        }
+        Write-Log '    telemetry: push to develop rejected twice; record kept on disk only' 'Yellow'
+    }
+    catch { Write-Log "    telemetry: $($_.Exception.Message); record kept on disk only" 'Yellow' }
+    finally {
+        foreach ($v in $gitEnv) { if (Test-Path "Env:$v") { Remove-Item "Env:$v" } }
+        Remove-Item $tmpIndex -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # --------------------------------------------------------------------------
@@ -1602,6 +1673,7 @@ Do not print either sentinel until the run is genuinely complete.
                           elseif ($cliExit -ne 0 -or $lastLine -ne $OK) { 'incomplete' }
                           else { 'ok' }
             Write-Analytics -Issue $n -Attempt $attempt -Outcome $runOutcome -BilledUsd $attemptBilled -Mode $mode -EpicIssue $item.EpicIssue
+            Publish-Analytics -Issue $n -Attempt $attempt -Outcome $runOutcome -BilledUsd $attemptBilled
 
             # Hard failure — not retryable. Leave the attempt loop; the quarantine
             # handler below decides whether the queue continues.
@@ -1654,6 +1726,7 @@ Do not print either sentinel until the run is genuinely complete.
             if ($agg -and $mode -eq 'subtask')  { $agg.child_ok++ }
             if ($agg -and $mode -eq 'finalize') {
                 Write-EpicRollup -Agg $agg -FinalizeOutcome 'ok'
+                Publish-Analytics -Issue $agg.epic -Attempt $attempt -Outcome 'epic' -BilledUsd $agg.billed_usd
                 Write-Log ("    epic #{0} complete: {1} child(ren), {2:N2} billed total" -f $agg.epic, $agg.child_total, $agg.billed_usd) 'Green'
             }
             $succeeded = $true
