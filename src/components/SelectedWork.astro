@@ -1,0 +1,77 @@
+---
+import { site } from '../data/site';
+
+const { selected } = site;
+---
+
+<section class="selected-work container" id="work" aria-labelledby="selected-work-label">
+  <p class="eyebrow" id="selected-work-label">{selected.label}</p>
+  <div class="selected-grid">
+    {
+      selected.items.map((item) => (
+        <a class="selected-link" href={item.href}>
+          <span class="selected-number">{item.number}</span>
+          <strong>{item.title}</strong>
+          <span class="selected-arrow" aria-hidden="true">↘</span>
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  .selected-work {
+    padding: $space-lg 0 44px;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    color: #495058;
+    font-size: $type-label;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    margin: 0 0 22px;
+    text-transform: uppercase;
+  }
+
+  .selected-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+  }
+
+  .selected-link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 4px 0 15px;
+    border-bottom: 1px solid #cdd2d0;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    strong {
+      font-size: 18px;
+    }
+  }
+
+  .selected-number {
+    font-family: var(--mono);
+    color: var(--teal);
+    font-size: 13px;
+  }
+
+  @media (max-width: $bp-tablet) {
+    .selected-grid {
+      grid-template-columns: 1fr;
+      gap: $space-xs;
+    }
+  }
+</style>
