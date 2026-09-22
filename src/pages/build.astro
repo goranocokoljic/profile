@@ -1,13 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 
 const { build } = site.pages;
 ---
 
 <Base title={build.title}>
+  <Header />
   <main class="container">
     <h1>{build.heading}</h1>
     <p>{build.empty}</p>
   </main>
+  <Footer />
 </Base>

@@ -1,7 +1,8 @@
 import { SiteSchema } from './site.schema';
 
 // Copy from design-reference/site/content.js, verbatim. Do not reword here;
-// copy changes start in the reference. `pages` is the only addition.
+// copy changes start in the reference. `pages` and `markup` are additions:
+// `markup` holds what the reference hard-codes in index.html.
 // Parsed at build time; islands get copy as props, never by importing this.
 export const site = SiteSchema.parse({
   nav: { work:'Work', build:'How this was built', about:'About', contact:'Contact', cv:'Download CV' },
@@ -101,5 +102,9 @@ export const site = SiteSchema.parse({
   pages: {
     home: { title:'Goran Ocokoljić — Lead Web Engineer' },
     build: { title:'Build record — Goran Ocokoljić', heading:'Build record', empty:'No runs recorded yet.' }
+  },
+  markup: {
+    monogram:'GO', homeLabel:'Goran Ocokoljić home', navLabel:'Primary navigation',
+    portraitAlt:'Goran Ocokoljić', cvHref:'/goran-ocokoljic-cv.pdf'
   }
 });

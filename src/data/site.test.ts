@@ -43,7 +43,7 @@ test('site.ts parses against the schema', async () => {
 
 test('copy matches content.js verbatim', async () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { pages, ...copy } = await loadSite();
+  const { pages, markup, ...copy } = await loadSite();
   expect(copy).toEqual(referenceCopy());
 });
 
@@ -89,5 +89,17 @@ test('an unknown key, an empty string and a bad href are rejected at their path 
     const result = SiteSchema.safeParse(input);
     expect(result.success).toBe(false);
     expect(z.prettifyError(result.error!)).toContain(path);
+  }
+});
+
+test('markup.cvHref accepts only a site-relative file path', async () => {
+  const site = await loadSite();
+  const parse = (cvHref: string) => SiteSchema.safeParse({ ...site, markup: { ...site.markup, cvHref } });
+  expect(parse('/goran-ocokoljic-cv.pdf').success).toBe(true);
+  expect(parse('/files/cv.pdf').success).toBe(true);
+  for (const bad of ['#', 'cv.pdf', '//evil.example/cv.pdf', 'https://example.com/cv.pdf', 'javascript:alert(1)', '/']) {
+    const result = parse(bad);
+    expect(result.success, bad).toBe(false);
+    expect(z.prettifyError(result.error!)).toContain('at markup.cvHref');
   }
 });

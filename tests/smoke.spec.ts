@@ -47,3 +47,108 @@ test('homepage h1 is the hero headline from site.ts', async ({ page }) => {
   await expect(spans).toHaveText([site.hero.headlineStart, site.hero.headlineEmphasis]);
   await expect(spans.nth(1)).toHaveClass('headline-emphasis');
 });
+
+test('header has the four section links and the CV link', async ({ page }) => {
+  await page.goto('/');
+  const header = page.locator('body > header');
+  const nav = header.getByRole('navigation', { name: site.markup.navLabel });
+  await expect(nav.getByRole('link')).toHaveText([
+    site.nav.work,
+    site.nav.build,
+    site.nav.about,
+    site.nav.contact,
+  ]);
+  const hrefs = await nav.getByRole('link').evaluateAll((links) =>
+    links.map((a) => a.getAttribute('href')),
+  );
+  expect(hrefs).toEqual(['/#work', '/#build', '/#about', '/#contact']);
+  const cv = header.getByRole('link', { name: site.nav.cv });
+  await expect(cv).toHaveAttribute('href', site.markup.cvHref);
+  await expect(header.getByRole('link', { name: site.markup.homeLabel })).toHaveText(
+    `${site.markup.monogram}.`,
+  );
+});
+
+test('header stays at the top of the viewport while scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await page.goto('/');
+  await page.mouse.wheel(0, 800);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+  const box = await page.locator('body > header').boundingBox();
+  expect(box?.y).toBe(0);
+});
+
+test('hero h1 reads as the full headline', async ({ page }) => {
+  await page.goto('/');
+  const text = await page.locator('h1').evaluate((h1) => h1.textContent?.replace(/\s+/g, ' ').trim());
+  expect(text).toBe(`${site.hero.headlineStart} ${site.hero.headlineEmphasis}`);
+});
+
+test('hero shows its copy, actions and build note', async ({ page }) => {
+  await page.goto('/');
+  const hero = page.locator('main .hero');
+  await expect(hero.locator('.eyebrow')).toHaveText(site.hero.eyebrow);
+  await expect(hero.locator('.hero-support')).toHaveText(site.hero.supporting);
+  await expect(hero.getByRole('link', { name: site.hero.primary })).toHaveAttribute('href', '#work');
+  await expect(hero.getByRole('link', { name: site.hero.secondary })).toHaveAttribute('href', '#build');
+  await expect(hero.getByRole('link', { name: site.hero.cv })).toHaveAttribute('href', site.markup.cvHref);
+  await expect(hero.locator('.build-note')).toHaveText(site.hero.buildNote);
+});
+
+test('portrait has alt text, intrinsic dimensions and a greyscale filter', async ({ page }) => {
+  await page.goto('/');
+  const img = page.locator('.hero-photo-wrap img');
+  await expect(img).toHaveAttribute('alt', site.markup.portraitAlt);
+  expect(Number(await img.getAttribute('width'))).toBeGreaterThan(0);
+  expect(Number(await img.getAttribute('height'))).toBeGreaterThan(0);
+  expect(await img.evaluate((el) => getComputedStyle(el).filter)).toBe('grayscale(1)');
+  expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+});
+
+test('footer shows the monogram and the footer line on both pages', async ({ page }) => {
+  for (const path of ['/', '/build']) {
+    await page.goto(path);
+    const footer = page.locator('body > footer');
+    await expect(footer.getByRole('link', { name: site.markup.homeLabel })).toBeVisible();
+    await expect(footer).toContainText(site.contact.footer);
+    await expect(page.locator('body > header')).toBeVisible();
+  }
+});
+
+test('the CV link resolves to a file', async ({ request }) => {
+  const response = await request.get(site.markup.cvHref);
+  expect(response.status()).toBe(200);
+});
+
+for (const width of [1440, 390]) {
+  test(`no layout shift and no client JS at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/', { waitUntil: 'load' });
+    const shift = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let total = 0;
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              total += (entry as PerformanceEntry & { value: number }).value;
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+          setTimeout(() => resolve(total), 500);
+        }),
+    );
+    expect(shift).toBe(0);
+    await expect(page.locator('script')).toHaveCount(0);
+  });
+}
+
+test('at 390px the nav collapses and the portrait sits below the copy', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('.desktop-nav')).toBeHidden();
+  await expect(page.locator('.header-cv')).toBeVisible();
+  const copy = await page.locator('.hero-copy').boundingBox();
+  const photo = await page.locator('.hero-photo-wrap').boundingBox();
+  expect(photo!.y).toBeGreaterThanOrEqual(copy!.y + copy!.height);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  expect(overflow).toBe(false);
+});
