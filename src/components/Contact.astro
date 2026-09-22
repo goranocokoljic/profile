@@ -1,0 +1,103 @@
+---
+import { site } from '../data/site';
+
+const { contact, markup } = site;
+const external = [
+  { href: markup.githubHref, label: contact.github },
+  { href: markup.pureContextHref, label: contact.purecontext },
+  { href: markup.linkedinHref, label: contact.linkedin },
+];
+---
+
+<section class="contact-section" id="contact" aria-labelledby="contact-title">
+  <div class="container contact-grid">
+    <div>
+      <h2 class="section-title" id="contact-title">{contact.title}</h2>
+      <p>{contact.supporting}</p>
+    </div>
+    <div class="contact-links">
+      <a href={markup.cvHref}>{contact.cv}</a>
+      {
+        external.map((link) => (
+          <a href={link.href} target="_blank" rel="noopener">
+            {link.label}
+            <span class="visually-hidden"> {markup.newTabLabel}</span>
+          </a>
+        ))
+      }
+      <a class="email-link" href={`mailto:${contact.email}`}>{contact.email}</a>
+      <span class="location">{contact.location}</span>
+    </div>
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  // The dark band. Footer.astro continues it; the reference's 72px gap above
+  // the footer row is this section's bottom padding.
+  .contact-section {
+    padding: 100px 0 72px;
+    background: var(--ink);
+    color: white;
+
+    h2 {
+      max-width: 850px;
+    }
+
+    p {
+      color: var(--dark-body);
+      line-height: 1.55;
+      font-size: $type-body;
+      max-width: 760px;
+    }
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 0.65fr;
+    gap: 90px;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 17px;
+    padding-top: 10px;
+
+    a {
+      border-bottom: 1px solid var(--dark-rule);
+      padding-bottom: 5px;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--dark-accent);
+        border-color: var(--dark-accent);
+      }
+    }
+
+    .email-link {
+      color: var(--dark-accent);
+    }
+  }
+
+  .location {
+    color: var(--dark-meta);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: $bp-tablet) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .contact-section h2 {
+      font-size: 42px;
+    }
+  }
+</style>

@@ -152,7 +152,8 @@ const contact = z.strictObject({
   github: text,
   purecontext: text,
   linkedin: text,
-  email: text,
+  // Also the mailto: target.
+  email: z.email(),
   location: text,
   footer: text,
 });
@@ -176,6 +177,10 @@ const markup = z.strictObject({
   // Site-relative file path, e.g. /goran-ocokoljic-cv.pdf.
   cvHref: z.string().regex(/^\/[\w.-]+(\/[\w.-]+)*$/),
   pureContextHref: z.url({ protocol: /^https$/ }),
+  githubHref: z.url({ protocol: /^https$/ }),
+  linkedinHref: z.url({ protocol: /^https$/ }),
+  // Link text of the CV line at the end of the background section.
+  backgroundCvLink: text,
   // Visually hidden suffix on links that open in a new tab.
   newTabLabel: text,
   // PureContext tool names the reference hard-codes as pills on the context card.

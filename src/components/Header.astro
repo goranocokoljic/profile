@@ -3,10 +3,11 @@ import Monogram from './Monogram.astro';
 import { site } from '../data/site';
 
 const { nav, markup } = site;
-// Root-relative, so the links also work from /build.
+// Root-relative, so the links also work from /build. "How this was built"
+// goes to the /build page (issue #12 moves the homepage section to #build-story).
 const links = [
   { href: '/#work', label: nav.work },
-  { href: '/#build', label: nav.build },
+  { href: '/build', label: nav.build },
   { href: '/#about', label: nav.about },
   { href: '/#contact', label: nav.contact },
 ];

@@ -63,7 +63,7 @@ for (const path of ['/', '/build']) {
     const hrefs = await nav.getByRole('link').evaluateAll((links) =>
       links.map((a) => a.getAttribute('href')),
     );
-    expect(hrefs).toEqual(['/#work', '/#build', '/#about', '/#contact']);
+    expect(hrefs).toEqual(['/#work', '/build', '/#about', '/#contact']);
     const cv = header.getByRole('link', { name: site.nav.cv });
     await expect(cv).toHaveAttribute('href', site.markup.cvHref);
     await expect(header.getByRole('link', { name: site.markup.homeLabel })).toHaveText(
@@ -204,7 +204,16 @@ test('homepage sections sit in order after the hero', async ({ page }) => {
   const classes = await page.locator('main > section').evaluateAll((sections) =>
     sections.map((s) => s.classList[0]),
   );
-  expect(classes.slice(0, 6)).toEqual(['hero', 'role-fit', 'selected-work', 'platform-section', 'ai-section', 'vismedic-section']);
+  expect(classes).toEqual([
+    'hero',
+    'role-fit',
+    'selected-work',
+    'platform-section',
+    'ai-section',
+    'vismedic-section',
+    'background-section',
+    'contact-section',
+  ]);
 });
 
 test('homepage headings step down without skipping a level', async ({ page }) => {
