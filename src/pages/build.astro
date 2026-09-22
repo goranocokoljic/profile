@@ -1,21 +1,19 @@
 ---
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 import { fmtDur, fmtUsd } from '../build/format';
+import { readPayloadJson } from '../build/load';
 import type { Payload } from '../build/types';
 import '../styles/dashboard.scss';
 
 const { build } = site.pages;
 
-// Written by the prebuild exporter. Embedded in the page rather than fetched:
-// the dashboard makes no runtime requests. Read as text, not imported, so the
-// checker does not infer a type for 600 KB of JSON. `<` is JSON-escaped so
-// recorded text such as "</script>" cannot close the data block.
-const raw = readFileSync(join(process.cwd(), 'public/build/data.json'), 'utf8');
+// Embedded in the page rather than fetched: the dashboard makes no runtime
+// requests. `<` is JSON-escaped so recorded text such as "</script>" cannot
+// close the data block.
+const raw = readPayloadJson();
 const payload = JSON.parse(raw) as Payload;
 const payloadJson = raw.replace(/</g, '\\u003c');
 const copy = JSON.stringify({ datasetLabel: build.datasetLabel, datasets: build.datasets, empty: build.empty });

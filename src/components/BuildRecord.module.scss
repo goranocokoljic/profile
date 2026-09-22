@@ -1,0 +1,143 @@
+// The build-record card's live part. The KPI grid is the reference's
+// .glance-metrics; the rest has no reference rule (the reference shows no data)
+// and follows the card's own .task-trail > p type.
+@use '../styles/tokens' as *;
+
+.record {
+  container-type: inline-size;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--fine);
+  border-bottom: 1px solid var(--fine);
+  margin: 36px 0 0;
+
+  div {
+    padding: 25px 12px;
+    border-right: 1px solid var(--fine);
+    min-width: 0;
+  }
+
+  div:last-child {
+    border-right: 0;
+  }
+
+  dt {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  // 30px in the reference, which shows no values. Five columns in half a
+  // container leave ~80px each, so the size follows the card's width.
+  dd {
+    margin: 10px 0 0;
+    font-size: clamp(14px, 4.2cqi, 30px);
+    white-space: nowrap;
+  }
+}
+
+.latest {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: $space-md 0 0;
+
+  a {
+    color: var(--teal);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+
+// On the global .mono-label: ink, not the paragraph's muted grey.
+.label {
+  color: var(--ink);
+}
+
+.toggle {
+  display: block;
+  margin: $space-xs 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--teal);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+
+.runs {
+  width: 100%;
+  margin: $space-xs 0 0;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    font-weight: 400;
+    color: var(--muted);
+    text-align: left;
+    text-transform: uppercase;
+    padding: 0 0 6px;
+  }
+
+  td {
+    padding: 6px 0;
+    border-top: 1px solid var(--fine);
+  }
+
+  th:last-child,
+  td:last-child {
+    text-align: right;
+  }
+}
+
+.cta {
+  display: inline-block;
+  margin: $space-md 0 0;
+}
+
+// A narrow two-column desktop (roughly 900–1200px) has no room for five
+// values side by side: three columns, then two.
+@container (max-width: 480px) {
+  .metrics {
+    grid-template-columns: repeat(3, 1fr);
+
+    div {
+      border-bottom: 1px solid var(--fine);
+    }
+
+    dd {
+      font-size: 22px;
+    }
+  }
+}
+
+@media (max-width: $bp-tablet) {
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+
+    div {
+      border-bottom: 1px solid var(--fine);
+    }
+
+  }
+}
+
+@media (max-width: $bp-phone) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+}

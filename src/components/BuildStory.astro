@@ -1,0 +1,188 @@
+---
+import { site } from '../data/site';
+import { readPayload } from '../build/load';
+import { summarize } from '../build/summary';
+import BuildRecord, { type BuildRecordCopy } from './BuildRecord';
+
+const { buildStory, markup } = site;
+const summary = summarize(readPayload().datasets.site);
+const { label, ...cardCopy } = markup.buildRecord;
+const copy: BuildRecordCopy = {
+  ...cardCopy,
+  metrics: buildStory.metrics.map(([metric]) => metric),
+  cta: buildStory.cta,
+  ctaHref: '/build',
+};
+---
+
+<section class="build-story" id="build-story" aria-labelledby="build-story-title">
+  <div class="container">
+    <p class="eyebrow">{buildStory.eyebrow}</p>
+    <div class="build-story-top">
+      <div>
+        <h2 class="section-title" id="build-story-title">{buildStory.title}</h2>
+        <p>{buildStory.intro}</p>
+      </div>
+      <ul class="intent-triad">
+        {buildStory.triad.map((item) => <li>{item}</li>)}
+      </ul>
+    </div>
+    <ol class="build-pipeline">
+      {
+        buildStory.flow.map((step, i) => (
+          <li>
+            <span>{String(i + 1).padStart(2, '0')}</span>
+            <strong>{step}</strong>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="build-story-mid">
+      <div>
+        <p>{buildStory.body}</p>
+      </div>
+      <article class="task-trail" aria-labelledby="task-trail-title">
+        <span class="mono-label">{label}</span>
+        <h3 id="task-trail-title">{buildStory.trailTitle}</h3>
+        <p>{buildStory.trailNote}</p>
+        <BuildRecord client:visible summary={summary} copy={copy} />
+      </article>
+    </div>
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  .build-story {
+    padding: $space-3xl 0 90px;
+    background: #fbfbf9;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .build-story-top,
+  .build-story-mid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .build-story-top {
+    gap: 72px;
+    align-items: end;
+
+    p {
+      color: var(--muted);
+      font-size: $type-body;
+      line-height: 1.55;
+      margin: 30px 0 0;
+    }
+  }
+
+  .intent-triad,
+  .build-pipeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .intent-triad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--fine);
+    background: var(--surface);
+
+    li {
+      font-family: var(--mono);
+      font-size: $type-micro;
+      letter-spacing: 0.08em;
+      text-align: center;
+      padding: 22px 12px;
+      border-right: 1px solid var(--fine);
+    }
+
+    li:last-child {
+      border-right: 0;
+    }
+  }
+
+  .build-pipeline {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+    margin-top: 60px;
+
+    li {
+      border: 1px solid var(--fine);
+      background: var(--surface);
+      min-height: 92px;
+      padding: 13px 10px;
+    }
+
+    span {
+      display: block;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--teal);
+      margin-bottom: 15px;
+    }
+
+    strong {
+      font-size: 12px;
+    }
+  }
+
+  .build-story-mid {
+    gap: 70px;
+    margin-top: $space-xl;
+
+    > div > p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+  }
+
+  .task-trail {
+    background: var(--surface);
+    border: 1px solid var(--fine);
+    padding: 28px;
+    min-width: 0;
+
+    h3 {
+      font-size: 24px;
+      margin: 10px 0;
+    }
+
+    > p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+
+  @media (max-width: $bp-tablet) {
+    .build-story-top,
+    .build-story-mid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    .build-pipeline {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .intent-triad {
+      grid-template-columns: 1fr;
+
+      li {
+        border-right: 0;
+        border-bottom: 1px solid var(--fine);
+      }
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .build-pipeline {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

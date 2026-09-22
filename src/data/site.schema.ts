@@ -127,14 +127,17 @@ const buildStory = z.strictObject({
   eyebrow: text,
   title: text,
   intro: text,
-  triad: z.array(text).min(1),
-  flow: z.array(text).min(1),
+  // Lengths pinned: the section lays these out as 3 and 8 grid columns.
+  triad: z.array(text).length(3),
+  flow: z.array(text).length(8),
   body: text,
   trailTitle: text,
   trailNote: text,
   // [label, value]. The value is an empty placeholder in the reference; the
-  // build-record data fills it at build time.
-  metrics: z.array(z.tuple([text, z.string()])).min(1),
+  // build-record data fills it at build time. Five: the card's KPI grid has
+  // five columns, in this order: tasks, successful runs, findings, wall time,
+  // billed cost.
+  metrics: z.array(z.tuple([text, z.string()])).length(5),
   cta: text,
 });
 
@@ -205,6 +208,19 @@ const markup = z.strictObject({
   // pairs each key with its image and the grid lays out exactly three figures.
   vismedicArchive: z.strictObject({ consultation: figure, booking: figure, calendar: figure }),
   vismedicAward: figure,
+  // The build-record card on the homepage: the reference's "BUILD RECORD"
+  // label, then strings the reference has no copy for (it shows no data).
+  buildRecord: z.strictObject({
+    label: text,
+    latest: text,
+    pr: text,
+    // The button that shows and hides the last runs.
+    showRuns: text,
+    hideRuns: text,
+    runsCaption: text,
+    columns: z.strictObject({ issue: text, outcome: text, billed: text }),
+    empty: text,
+  }),
 });
 
 export const SiteSchema = z.strictObject({
