@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4321;
+// Not 4321, so a running `astro dev` is never mistaken for the built site.
+const PORT = 4329;
 
 export default defineConfig({
   testDir: 'tests',
@@ -15,6 +16,6 @@ export default defineConfig({
   webServer: {
     command: `npm run preview -- --port ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
 });

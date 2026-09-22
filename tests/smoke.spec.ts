@@ -30,3 +30,11 @@ test('viewport allows safe-area layout', async ({ page }) => {
     /viewport-fit=cover/,
   );
 });
+
+test('reference tokens reach the page at runtime', async ({ page }) => {
+  await page.goto('/');
+  const teal = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--teal').trim(),
+  );
+  expect(teal.toUpperCase()).toBe('#0D8075');
+});
