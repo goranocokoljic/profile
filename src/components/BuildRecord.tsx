@@ -53,7 +53,7 @@ export default function BuildRecord({ summary, copy }: Props) {
       {latest ? (
         <>
           <p className={styles.latest}>
-            <span className={styles.label}>{copy.latest}</span>{' '}
+            <span className={`mono-label ${styles.label}`}>{copy.latest}</span>{' '}
             {latest.url ? <a href={latest.url}>#{latest.issue}</a> : `#${latest.issue}`}
             {latest.title ? <> {latest.title}</> : null}
             {' · '}

@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { site } from '../src/data/site';
+import { fmtUsd } from '../src/build/format';
 import type { Payload } from '../src/build/types';
 
 const { buildStory, markup } = site;
@@ -33,7 +34,7 @@ test('build story is #build-story, after VisMedic and before background, with it
   await expect(s.locator('.build-pipeline li span')).toHaveText(buildStory.flow.map((_, i) => String(i + 1).padStart(2, '0')));
   await expect(s.locator('.build-pipeline li strong')).toHaveText([...buildStory.flow]);
   await expect(s.locator('.build-story-mid > div > p')).toHaveText(buildStory.body);
-  await expect(trail(page).locator('.mono-label')).toHaveText(card.label);
+  await expect(trail(page).locator(':scope > .mono-label')).toHaveText(card.label);
   await expect(trail(page).locator('h3')).toHaveText(buildStory.trailTitle);
   await expect(trail(page).locator(':scope > p')).toHaveText(buildStory.trailNote);
   await expect(trail(page).getByRole('link', { name: buildStory.cta })).toHaveAttribute('href', '/build');
@@ -94,9 +95,10 @@ test('the toggle shows and hides the last 5 runs', async ({ page }) => {
   await expect(runs).toBeVisible();
   await expect(runs.locator('thead th')).toHaveText([card.columns.issue, card.columns.outcome, card.columns.billed]);
   const rows = await runs.locator('tbody tr').evaluateAll((trs) => trs.map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent)));
-  expect(rows.map(([issue, outcome]) => [issue, outcome])).toEqual(recent.map((t) => [`#${t.issue}`, t.outcome]));
+  expect(rows).toEqual(recent.map((t) => [`#${t.issue}`, t.outcome, fmtUsd(t.billed_cost_usd)]));
+  expect(await runs.getAttribute('id')).toBe(await hide.getAttribute('aria-controls'));
 
-  await hide.click();
+  await hide.press('Enter');
   await expect(runs).toBeHidden();
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
 });
@@ -182,10 +184,23 @@ test('/ hydrates the card under CSP default-src self with no outside requests', 
   expect(requests.filter((u) => !u.startsWith(origin))).toEqual([]);
 });
 
-test('the island component chunk is under 6 KB gzipped', () => {
+// The component and every chunk it imports (format helpers, the React
+// runtime shim, the CSS-module map). The renderer (react-dom client) is the
+// framework cost, not the component's, and is left out.
+test('the island component and its imports are under 6 KB gzipped', () => {
   const html = readFileSync('dist/index.html', 'utf8');
-  const url = /<astro-island[^>]*? component-url="([^"]+)"/.exec(html)![1];
-  expect(gzipSync(readFileSync(`dist${url}`)).length).toBeLessThan(6 * 1024);
+  const entry = /<astro-island[^>]*? component-url="\/_astro\/([^"]+)"/.exec(html)![1];
+  const seen = new Set<string>();
+  const walk = (file: string): void => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    const js = readFileSync(`dist/_astro/${file}`, 'utf8');
+    for (const m of js.matchAll(/(?:from|import)\s*"\.\/([^"]+\.js)"/g)) walk(m[1]);
+  };
+  walk(entry);
+  expect(seen.size).toBeGreaterThan(1);
+  const total = [...seen].reduce((a, f) => a + gzipSync(readFileSync(`dist/_astro/${f}`)).length, 0);
+  expect(total).toBeLessThan(6 * 1024);
 });
 
 // The reference page, served from this origin, so both render with the same
