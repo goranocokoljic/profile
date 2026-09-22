@@ -214,12 +214,16 @@ full record of everything the model did. Gitignored.
 ### Analytics — `data/build/site/` (JSONL, committed)
 Written once per attempt, separate from the stream logs, for analysis.
 
-After every attempt (any outcome) the runner commits `tasks.jsonl`, `review-cycles.jsonl`
-and `epics.jsonl` straight to `develop` and pushes, as author **tr-harness telemetry**
-with message `chore(build): record run for #<issue> (attempt <n>, <outcome>, $<billed>)`.
+After every attempt (any outcome) the runner commits `tasks.jsonl`, `review-cycles.jsonl`,
+`epics.jsonl`, `review-lessons.jsonl` (the skill's distill step appends to it) and the
+skill's post-merge `reports/issue-<n>.md` straight to `develop` and pushes, as author
+**tr-harness telemetry** with message
+`chore(build): record run for #<issue> (attempt <n>, <outcome>, $<billed>)`.
 It uses git plumbing against `origin/develop`, so the checked-out branch and working
 tree are never touched; a failed attempt's dirty feature branch stays as it was. A push
 that fails is logged and the record stays on disk. `-NoPublish` turns this off.
+A KB graduation commits `review-lessons.jsonl` + `dev-docs/review-rules.md` the same
+way, under the git config identity (`chore(kb): graduate ...`), since it is a human decision.
 
 **`tasks.jsonl`** — one record per issue run:
 
@@ -239,6 +243,7 @@ that fails is logged and the record stays on disk. `-NoPublish` turns this off.
 |-------|---------|
 | `issue`, `attempt`, `review_cycle`, `max_cycles` | which cycle |
 | `findings` | `critical`/`high`/`medium`/`low`/`style`, plus derived `blocker` (=crit+high) and `total` |
+| `findings_source` | `marker` (the agent's `review_done` line, deduped), `review-file` (fallback: counted from `reviews/issue-N-multi-pass-K.md` by `scripts/dev-cycle/review-counts.mjs` — raw, not deduped, so an upper bound) or `none` |
 | `dispositions` | The fate of every deduped finding, **as adjudicated by the fixer** (who holds the implementation intent): `fixed`, `rejected_intentional` (deliberate code backed by a named, verifiable constraint), `rejected_wrong` (reviewer factually incorrect), `deferred` (real but non-blocking, filed as follow-up). Sums to `findings.total`. `null` on cycles that never reported (pre-tracking records). This measures reviewer **false positives** — the raw signal for whether context-blind reviewers need an intent memo. |
 | `review_sec` | time spent reviewing (running the review + bucketing findings) |
 | `fix_sec` | time spent fixing (`null` if the cycle was clean and exited without fixing) |

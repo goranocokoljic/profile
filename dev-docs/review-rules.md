@@ -4,5 +4,7 @@
 > Do not edit by hand. These are recurring code-review findings that recurred often
 > enough to graduate into always-loaded project rules. Honor them when writing code.
 
-_No lessons have graduated yet. Active lessons live in the KB store and are
-injected into the implementer at dev-cycle Phase 3 instead._
+## over-abstraction
+
+- **Port reference-global utility classes once, not as scoped copies per section.** When a reference class (e.g. .eyebrow, .text-link, .mono-label) is used by several sections, put its base rule in src/styles/global.scss and keep only per-section overrides scoped; do not copy the full rule into each component.
+  - _Why:_ #4: SelectedWork.astro re-declared the full .eyebrow rule already scoped in Hero.astro; 5 more sections in the reference use it, so the copy would spread to 7 places.

@@ -600,10 +600,16 @@ Initialize `REVIEW_CYCLE=1`. Repeat up to `MAX_CYCLES` times:
    this loop: exclude them from every bucket and metric line, and append
    them to `dev-docs/parking-lot.md` per the Convergence guard.
 
-   Then emit the analytics line with the **deduped** counts (0 is fine for any bucket):
+   **REQUIRED — emit this line immediately after reading the review file, before
+   any fix, on its own line of plain text (not inside a code fence, not quoted):**
    ```
    DEVCYCLE_METRIC: review_done | review_cycle={REVIEW_CYCLE} | critical={C} high={H} medium={M} low={L} style={S}
    ```
+   Use the **deduped** counts; 0 is fine for any bucket. This line is how the run
+   record gets its findings count. Runs 1–8 on this repo skipped it and were
+   recorded as "0 findings" against reviews that listed 20+. If it is missing,
+   the runner falls back to counting the review file (`scripts/dev-cycle/review-counts.mjs`),
+   which is raw and not deduped — so your line is the better number.
 3. If there are zero Blocker findings → exit loop and go to Phase 7. Medium / Low / Style do NOT block exit. (Blockers converge reliably; Medium oscillates — chasing it to zero burns cycles and has been observed to introduce fresh blockers. The real guarantee is "merged with zero blockers.") Any unfixed Medium/Low findings are filed as follow-ups — see "On a clean exit" below.
    Before leaving the loop, adjudicate each deduped finding (see the `dispositions`
    definition under Analytics reporting) and emit:

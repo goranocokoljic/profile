@@ -380,6 +380,10 @@ function Start-ReviewCycle {
         review_cycle = $N; max_cycles = $Max
         review_start = (Get-Date); review_end = $null; fix_start = $null; fix_end = $null
         critical = 0; high = 0; medium = 0; low = 0; style = 0
+        # Where the severity counts came from: 'marker' (the agent's review_done
+        # line), 'review-file' (fallback: counted from reviews/issue-N-multi-pass-K.md
+        # by scripts/dev-cycle/review-counts.mjs, raw not deduped) or 'none'.
+        findings_source = 'none'
         # Finding dispositions as adjudicated by the fixer (context-blindness metric).
         # $null = never reported (old skill / crashed cycle), distinct from a real 0.
         fixed = $null; rejected_intentional = $null; rejected_wrong = $null; deferred = $null
@@ -427,6 +431,7 @@ function Read-MetricMarker {
                 foreach ($k in 'critical','high','medium','low','style') {
                     if ($kv.ContainsKey($k)) { $script:CurCycle[$k] = $kv[$k] }
                 }
+                $script:CurCycle.findings_source = 'marker'
                 $script:CurCycle.review_end = Get-Date
                 $script:CurSub = 'between'
                 $b = $script:CurCycle.critical + $script:CurCycle.high
@@ -486,6 +491,21 @@ function Write-Analytics {
         }
     }
 
+    # Fallback: a cycle whose review_done marker never arrived gets its severity
+    # counts from the review file the lenses wrote (raw, not deduped).
+    foreach ($c in $script:RunCycles) {
+        if ($c.findings_source -eq 'marker') { continue }
+        $rf = Join-Path $PSScriptRoot ('reviews/issue-{0}-multi-pass-{1}.md' -f $Issue, $c.review_cycle)
+        if (-not (Test-Path $rf)) { continue }
+        try {
+            $counts = node (Join-Path $PSScriptRoot 'scripts/dev-cycle/review-counts.mjs') $rf 2>$null | Out-String | ConvertFrom-Json
+            if ($counts) {
+                foreach ($k in 'critical','high','medium','low','style') { $c[$k] = [int]$counts.$k }
+                $c.findings_source = 'review-file'
+            }
+        } catch { }
+    }
+
     $cycleRecs = foreach ($c in $script:RunCycles) {
         $reviewSec = Get-Sec $c.review_start $c.review_end
         $fixSec    = Get-Sec $c.fix_start $c.fix_end
@@ -512,6 +532,7 @@ function Write-Analytics {
                 blocker = ($c.critical + $c.high)
                 total = ($c.critical + $c.high + $c.medium + $c.low + $c.style)
             }
+            findings_source = $c.findings_source
             dispositions   = $disp
             review_sec       = $reviewSec
             fix_sec          = $fixSec
@@ -604,46 +625,48 @@ function Write-EpicRollup {
     Add-Content -Path $epicsJsonl -Value ($rec | ConvertTo-Json -Depth 6 -Compress)
 }
 
-# Commit the analytics files to develop after every attempt, whatever the
-# outcome, so the run record has git history (one 'tr-harness telemetry' commit
-# per attempt; the README explains these are records, not code changes).
-#
-# Built with git plumbing against origin/develop so it never touches the working
-# tree, the index or the checked-out branch: a failed attempt can leave the
-# agent's feature branch checked out and dirty, and a resume must find it that
-# way. The local develop ref is moved along only when it still equals the base.
-# Never fatal — on any error the record stays on disk and the queue continues.
-function Publish-Analytics {
-    param([int]$Issue, [int]$Attempt, [string]$Outcome, [double]$BilledUsd)
+
+# Commit a set of repo files straight to develop and push, without touching the
+# working tree, the index or the checked-out branch. Built with git plumbing
+# against origin/develop: a failed attempt can leave the agent's feature branch
+# checked out and dirty, and a resume must find it that way. The local develop
+# ref is moved along only when it still equals the base. Never fatal — on any
+# error the files stay on disk and the queue continues. Files that do not exist
+# on disk are skipped; when nothing differs from origin/develop, no commit.
+# -Author/-Email default to the git config identity (a human commit); the
+# per-attempt telemetry passes 'tr-harness telemetry' so the record card and
+# the README can tell run records apart from code changes.
+function Publish-Files {
+    param([string[]]$Paths, [string]$Message, [string]$Author = '', [string]$Email = '')
     if ($NoPublish) { return }
 
-    $names = @('tasks.jsonl', 'review-cycles.jsonl', 'epics.jsonl') | Where-Object { Test-Path (Join-Path $analyticsDir $_) }
+    $names = @($Paths | Where-Object { Test-Path (Join-Path $PSScriptRoot $_) })
     if (-not $names) { return }
-    $rel = 'data/build/site'
-    $msg = 'chore(build): record run for #{0} (attempt {1}, {2}, ${3:N2})' -f $Issue, $Attempt, $Outcome, $BilledUsd
     $tmpIndex = Join-Path ([IO.Path]::GetTempPath()) ('tr-harness-index-' + [IO.Path]::GetRandomFileName())
     $gitEnv = 'GIT_INDEX_FILE', 'GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL'
 
     try {
         for ($try = 1; $try -le 2; $try++) {
             git -C $PSScriptRoot fetch -q origin develop 2>$null
-            if ($LASTEXITCODE -ne 0) { Write-Log '    telemetry: fetch failed; record kept on disk only' 'Yellow'; return }
+            if ($LASTEXITCODE -ne 0) { Write-Log '    publish: fetch failed; files kept on disk only' 'Yellow'; return }
             $base = (git -C $PSScriptRoot rev-parse origin/develop).Trim()
 
-            # Build a tree = origin/develop + the current analytics files.
+            # Build a tree = origin/develop + the current content of the files.
             $env:GIT_INDEX_FILE = $tmpIndex
             git -C $PSScriptRoot read-tree $base
-            foreach ($f in $names) {
-                $blob = (git -C $PSScriptRoot hash-object -w (Join-Path $analyticsDir $f)).Trim()
-                git -C $PSScriptRoot update-index --add --cacheinfo "100644,$blob,$rel/$f"
+            foreach ($p in $names) {
+                $blob = (git -C $PSScriptRoot hash-object -w (Join-Path $PSScriptRoot $p)).Trim()
+                git -C $PSScriptRoot update-index --add --cacheinfo "100644,$blob,$($p -replace '\\', '/')"
             }
             $tree = (git -C $PSScriptRoot write-tree).Trim()
             Remove-Item Env:GIT_INDEX_FILE
-            if ($tree -eq (git -C $PSScriptRoot rev-parse "$base^{tree}").Trim()) { return }   # already recorded
+            if ($tree -eq (git -C $PSScriptRoot rev-parse "$base^{tree}").Trim()) { return }   # already on develop
 
-            $env:GIT_AUTHOR_NAME = 'tr-harness telemetry'; $env:GIT_AUTHOR_EMAIL = 'telemetry@tr-harness.noreply'
-            $env:GIT_COMMITTER_NAME = $env:GIT_AUTHOR_NAME; $env:GIT_COMMITTER_EMAIL = $env:GIT_AUTHOR_EMAIL
-            $commit = (git -C $PSScriptRoot commit-tree $tree -p $base -m $msg).Trim()
+            if ($Author) {
+                $env:GIT_AUTHOR_NAME = $Author; $env:GIT_AUTHOR_EMAIL = $Email
+                $env:GIT_COMMITTER_NAME = $Author; $env:GIT_COMMITTER_EMAIL = $Email
+            }
+            $commit = (git -C $PSScriptRoot commit-tree $tree -p $base -m $Message).Trim()
             foreach ($v in $gitEnv) { if (Test-Path "Env:$v") { Remove-Item "Env:$v" } }
 
             git -C $PSScriptRoot push -q origin "${commit}:refs/heads/develop" 2>$null
@@ -653,21 +676,34 @@ function Publish-Analytics {
                 if ((git -C $PSScriptRoot rev-parse --verify -q develop).Trim() -eq $base) {
                     git -C $PSScriptRoot update-ref refs/heads/develop $commit $base
                     if ((git -C $PSScriptRoot rev-parse --abbrev-ref HEAD).Trim() -eq 'develop') {
-                        git -C $PSScriptRoot reset -q -- $rel 2>$null
+                        git -C $PSScriptRoot reset -q -- @names 2>$null
                     }
                 }
-                Write-Log ("    telemetry: {0} -> develop ({1})" -f $commit.Substring(0, 7), $msg) 'DarkGray'
+                Write-Log ("    publish: {0} -> develop ({1})" -f $commit.Substring(0, 7), $Message) 'DarkGray'
                 return
             }
             # Push rejected: someone pushed in between. Refetch and rebuild once.
         }
-        Write-Log '    telemetry: push to develop rejected twice; record kept on disk only' 'Yellow'
+        Write-Log '    publish: push to develop rejected twice; files kept on disk only' 'Yellow'
     }
-    catch { Write-Log "    telemetry: $($_.Exception.Message); record kept on disk only" 'Yellow' }
+    catch { Write-Log "    publish: $($_.Exception.Message); files kept on disk only" 'Yellow' }
     finally {
         foreach ($v in $gitEnv) { if (Test-Path "Env:$v") { Remove-Item "Env:$v" } }
         Remove-Item $tmpIndex -Force -ErrorAction SilentlyContinue
     }
+}
+
+# After every attempt, whatever the outcome: the analytics JSONL, the review-KB
+# store (the skill's distill step appends to it) and the per-issue report the
+# skill writes AFTER the merge (so it can never be in the PR), as one
+# 'tr-harness telemetry' commit. -NoPublish turns it off.
+function Publish-Analytics {
+    param([int]$Issue, [int]$Attempt, [string]$Outcome, [double]$BilledUsd)
+    $paths = @('data/build/site/tasks.jsonl', 'data/build/site/review-cycles.jsonl',
+               'data/build/site/epics.jsonl', 'data/build/site/review-lessons.jsonl',
+               "reports/issue-$Issue.md")
+    $msg = 'chore(build): record run for #{0} (attempt {1}, {2}, ${3:N2})' -f $Issue, $Attempt, $Outcome, $BilledUsd
+    Publish-Files -Paths $paths -Message $msg -Author 'tr-harness telemetry' -Email 'telemetry@tr-harness.noreply'
 }
 
 # --------------------------------------------------------------------------
@@ -1452,7 +1488,11 @@ function Invoke-GraduationReview {
         Write-Host '    ! graduate.mjs failed - the KB may be unchanged.' -ForegroundColor Red
         return
     }
-    Write-Host '    done - dev-docs/review-rules.md regenerated. Commit review-lessons.jsonl + review-rules.md when ready.' -ForegroundColor Green
+    Write-Host '    done - dev-docs/review-rules.md regenerated.' -ForegroundColor Green
+    # A graduation is a human decision, so this commit carries the git config
+    # identity, not the telemetry author.
+    Publish-Files -Paths @('data/build/site/review-lessons.jsonl', 'dev-docs/review-rules.md') `
+                  -Message ('chore(kb): graduate {0} lesson(s): {1} (human)' -f @($picked).Count, (@($picked) -join ', '))
 }
 
 # --------------------------------------------------------------------------
