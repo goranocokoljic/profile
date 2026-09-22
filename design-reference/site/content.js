@@ -1,7 +1,7 @@
 window.siteCopy = {
   nav: { work:'Work', build:'How this was built', about:'About', contact:'Contact', cv:'Download CV' },
   hero: {
-    eyebrow:'LEAD WEB ENGINEER · APPLICATION FOR GENKI',
+    eyebrow:'LEAD WEB ENGINEER · APPLICATION',
     headlineStart:'I turn organically grown web systems into',
     headlineEmphasis:'platforms other people can ship on.',
     supporting:'Hands-on architect. 20+ high-traffic portals moved onto one shared platform, a telehealth product used by real doctors and patients, and AI delivery systems where agents implement, review and verify — with the run data to prove it.',
@@ -9,7 +9,7 @@ window.siteCopy = {
     buildNote:'This page was implemented by tr-harness, an autonomous development harness I designed. The build record is at the bottom.'
   },
   roleFit: {
-    title:'Why Genki, specifically',
+    title:'Why this role, specifically',
     intro:'Three things in the role map directly onto work I have already done, and one is the reason I am applying at all.',
     items:[
       {title:'Unify what has grown organically',body:'I did exactly this for a portfolio of 20+ news portals: repeated per-site implementations became one shared Vue/Nuxt platform, without slowing the products running on it. The pattern transfers to React and Astro; the framework was never the hard part.'},

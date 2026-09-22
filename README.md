@@ -1,6 +1,6 @@
-# Genki application — Lead Web Engineer
+# Application site — Lead Web Engineer
 
-This is my application for the Lead Web Engineer role at Genki, built as software.
+This is my application for a Lead Web Engineer role, built as software.
 The site is a one-page portfolio (platform engineering, AI engineering, VisMedic)
 plus a `/build` page that shows how the site itself was made.
 
