@@ -14,9 +14,22 @@ for (const file of ['dist/index.html', 'dist/build/index.html']) {
   test(`${file} has no inline styles or scripts (CSP default-src 'self')`, () => {
     const html = readFileSync(file, 'utf8');
     expect(html).not.toMatch(/<style[\s>]/i);
-    expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/i);
+    // A JSON data block is not executed, so CSP does not apply to it.
+    expect(html).not.toMatch(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/json")[^>]*>/i);
   });
 }
+
+// The payload is inlined in the page, not fetched, and must stay under 1.5 MB.
+test('dist/build/index.html inlines the payload and stays under 1.5 MB', () => {
+  const html = readFileSync('dist/build/index.html', 'utf8');
+  expect(Buffer.byteLength(html)).toBeLessThan(1.5 * 1024 * 1024);
+  const blocks = [...html.matchAll(/<script type="application\/json" id="build-data">([\s\S]*?)<\/script>/g)];
+  expect(blocks).toHaveLength(1);
+  const body = blocks[0][1];
+  // `<` is escaped, so recorded text cannot close the block early.
+  expect(body).not.toContain('<');
+  expect(JSON.parse(body)).toEqual(JSON.parse(readFileSync('dist/build/data.json', 'utf8')));
+});
 
 // The prebuild exporter's payload ships next to the /build page.
 test('dist/build/data.json ships both build-record datasets', () => {

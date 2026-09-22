@@ -10,7 +10,7 @@ const INK = 'rgb(17, 19, 24)';
 
 // In-page links that have no target yet, and the issue that adds it. The test
 // fails when one of these starts to resolve, so that issue must update the list.
-const PENDING_TARGETS: Record<string, string> = { '#build': '#12 (hero CTA moves to #build-story)' };
+const PENDING_TARGETS: Record<string, string> = {};
 
 for (const path of ['/', '/build']) {
   test(`${path} every header nav link resolves`, async ({ page, request }) => {
