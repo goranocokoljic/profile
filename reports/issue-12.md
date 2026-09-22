@@ -70,4 +70,5 @@
   - node tests for `externalize()`
 - **Gate:** `npm run check` has 0 errors. `npm run build` has no warnings. `npm test` passed 127/127.
 - **Coverage:** the repo has no `test:coverage` script, so there are no per-file numbers.
-- **Note:** the GitHub CI gate and the Cloudflare build were still pending when the PR was merged.
+- **Follow-up #28:** CI on develop failed "KPI values fit their columns at 1440px". On Linux, Inter is not installed and the fallback font is wider, so a value spilled 3.4 px. The value size went from `4.2cqi` to `3.8cqi`. CI on develop is green after #28.
+- **Cloudflare PR check:** "Workers Builds" fails on every PR, including #25 and #26 before this issue. It passes on develop.
