@@ -1,0 +1,224 @@
+---
+import { Image } from 'astro:assets';
+import { site } from '../data/site';
+import portrait from '../assets/goran-hero.jpg';
+
+const { hero, markup } = site;
+---
+
+<section class="hero container">
+  <div class="hero-copy">
+    <p class="eyebrow">{hero.eyebrow}</p>
+    <h1>
+      <span>{hero.headlineStart}</span>
+      <span class="headline-emphasis">{hero.headlineEmphasis}</span>
+    </h1>
+    <p class="hero-support">{hero.supporting}</p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="#work"><span>{hero.primary}</span><span aria-hidden="true">→</span></a>
+      <a class="button button-secondary" href="#build">{hero.secondary}</a>
+      <a class="text-link" href={markup.cvHref}>{hero.cv}</a>
+    </div>
+    <p class="build-note"><span class="build-note-rule"></span><span>{hero.buildNote}</span></p>
+  </div>
+  <figure class="hero-photo-wrap">
+    <Image
+      class="hero-photo"
+      src={portrait}
+      alt={markup.portraitAlt}
+      widths={[480, 720, 960, 1365]}
+      sizes="(max-width: 900px) 100vw, 620px"
+      loading="eager"
+      fetchpriority="high"
+    />
+  </figure>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  $photo-height: 665px;
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(420px, 0.98fr);
+    min-height: $photo-height;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .hero-copy {
+    padding: $space-2xl 64px 64px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    color: var(--teal);
+    font-size: $type-label;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    margin: 0 0 $space-md;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: $type-display;
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+    margin: 0;
+    max-width: 760px;
+    font-weight: 730;
+
+    span {
+      display: block;
+    }
+  }
+
+  .headline-emphasis {
+    width: fit-content;
+    background: linear-gradient(100deg, var(--gradient-start), var(--gradient-end));
+    color: transparent;
+    // Chromium < 120 and older WebKit only know the prefixed form; without it
+    // the transparent text would be invisible there.
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .hero-support {
+    margin: $space-lg 0 0;
+    color: #40474f;
+    font-size: $type-lead;
+    line-height: 1.52;
+    max-width: 670px;
+  }
+
+  .hero-actions {
+    margin-top: $space-lg;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .button {
+    min-height: 50px;
+    padding: 0 22px;
+    display: inline-flex;
+    gap: $space-xs;
+    align-items: center;
+    justify-content: center;
+    border-radius: $radius-sm;
+    font-weight: 650;
+    font-size: 15px;
+  }
+
+  .button-primary {
+    background: var(--teal);
+    color: white;
+
+    &:hover {
+      background: #096e65;
+    }
+  }
+
+  .button-secondary {
+    border: 1px solid #c7cdca;
+    background: transparent;
+
+    &:hover {
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+  }
+
+  .text-link {
+    color: var(--teal);
+    font-weight: 650;
+    margin-left: 4px;
+    text-decoration: underline;
+    text-underline-offset: 6px;
+  }
+
+  .build-note {
+    margin: auto 0 0;
+    max-width: 560px;
+    color: var(--muted);
+    line-height: 1.45;
+    font-size: $type-small;
+  }
+
+  .build-note-rule {
+    display: block;
+    width: 34px;
+    height: 1px;
+    background: #8f999b;
+    margin-bottom: $space-sm;
+  }
+
+  // The image is taken out of flow, so the figure's size never depends on it
+  // loading: no layout shift.
+  .hero-photo-wrap {
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+    min-height: $photo-height;
+    background: #ececea;
+  }
+
+  .hero-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: 50% 38%;
+    filter: grayscale(100%);
+  }
+
+  @media (max-width: $bp-tablet) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-copy {
+      padding: $space-xl 0 42px;
+    }
+
+    h1 {
+      font-size: $type-display-tablet;
+    }
+
+    .build-note {
+      margin-top: 48px;
+    }
+
+    .hero-photo-wrap {
+      min-height: 520px;
+    }
+
+    .hero-photo {
+      object-position: 50% 30%;
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .hero-photo-wrap {
+      min-height: 420px;
+    }
+
+    .hero-support {
+      font-size: $type-body;
+    }
+
+    .button {
+      width: 100%;
+    }
+
+    .text-link {
+      margin: $space-2xs 0 0;
+    }
+  }
+</style>

@@ -1,0 +1,78 @@
+---
+import Monogram from './Monogram.astro';
+import { site } from '../data/site';
+
+const { nav, markup } = site;
+// Root-relative, so the links also work from /build.
+const links = [
+  { href: '/#work', label: nav.work },
+  { href: '/#build', label: nav.build },
+  { href: '/#about', label: nav.about },
+  { href: '/#contact', label: nav.contact },
+];
+---
+
+<header class="site-header">
+  <div class="container header-row">
+    <Monogram />
+    <nav class="desktop-nav" aria-label={markup.navLabel}>
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
+    </nav>
+    <a class="header-cv" href={markup.cvHref}>{nav.cv}</a>
+  </div>
+</header>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  .site-header {
+    position: sticky;
+    top: env(safe-area-inset-top, 0);
+    z-index: 10;
+    background: var(--bg);
+  }
+
+  .header-row {
+    height: $header-height;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .desktop-nav {
+    display: flex;
+    gap: $space-lg;
+    font-size: $type-small;
+    color: #2a3138;
+  }
+
+  .header-cv {
+    justify-self: end;
+    color: var(--teal);
+    font-size: $type-small;
+    font-weight: 650;
+  }
+
+  .desktop-nav a:hover,
+  .header-cv:hover {
+    color: var(--teal);
+  }
+
+  @media (max-width: $bp-tablet) {
+    .header-row {
+      grid-template-columns: 1fr auto;
+      height: $header-height-tablet;
+    }
+
+    .desktop-nav {
+      display: none;
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .header-cv {
+      font-size: $type-label;
+    }
+  }
+</style>

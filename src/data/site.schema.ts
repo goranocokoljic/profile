@@ -1,8 +1,9 @@
 // zod 4 from the `zod` package, not the zod 3 re-exported by `astro/zod`.
 import { z } from 'zod';
 
-// Mirrors `window.siteCopy` in design-reference/site/content.js, plus a `pages`
-// block for page-level strings the reference keeps in its HTML. Objects are
+// Mirrors `window.siteCopy` in design-reference/site/content.js, plus `pages`
+// (page-level strings) and `markup` (strings and links the reference hard-codes
+// in index.html). Only content.js keys are checked verbatim against the reference. Objects are
 // strict, so a missing or misspelt key fails the parse and names the path.
 
 const text = z.string().min(1);
@@ -161,6 +162,16 @@ const pages = z.strictObject({
   build: z.strictObject({ title: text, heading: text, empty: text }),
 });
 
+// Not in content.js: strings and links the reference writes into index.html.
+const markup = z.strictObject({
+  monogram: text,
+  homeLabel: text,
+  navLabel: text,
+  portraitAlt: text,
+  // Site-relative file path, e.g. /goran-ocokoljic-cv.pdf.
+  cvHref: z.string().regex(/^\/[\w.-]+(\/[\w.-]+)*$/),
+});
+
 export const SiteSchema = z.strictObject({
   nav,
   hero,
@@ -173,6 +184,7 @@ export const SiteSchema = z.strictObject({
   background,
   contact,
   pages,
+  markup,
 });
 
 export type Site = z.infer<typeof SiteSchema>;

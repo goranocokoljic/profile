@@ -1,0 +1,41 @@
+---
+import Monogram from './Monogram.astro';
+import { site } from '../data/site';
+
+const { contact } = site;
+---
+
+<footer class="site-footer">
+  <div class="container footer-row">
+    <Monogram inverse />
+    <span>{contact.footer}</span>
+  </div>
+</footer>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  // In the reference this row closes the dark contact section.
+  .site-footer {
+    background: var(--ink);
+    padding: 0 0 28px;
+  }
+
+  .footer-row {
+    padding-top: $space-md;
+    border-top: 1px solid #33393d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #8f979b;
+    font-size: $type-label;
+  }
+
+  @media (max-width: $bp-phone) {
+    .footer-row {
+      align-items: flex-start;
+      gap: 20px;
+      flex-direction: column;
+    }
+  }
+</style>

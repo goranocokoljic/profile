@@ -1,0 +1,34 @@
+---
+import { site } from '../data/site';
+
+interface Props {
+  // White mark for dark backgrounds (the footer).
+  inverse?: boolean;
+}
+
+const { inverse = false } = Astro.props;
+const { markup } = site;
+---
+
+<a class:list={['monogram', { inverse }]} href="/#top" aria-label={markup.homeLabel}
+  >{markup.monogram}<span>.</span></a
+>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  .monogram {
+    justify-self: start;
+    font-weight: 800;
+    font-size: $type-h3;
+    letter-spacing: -0.065em;
+
+    span {
+      color: var(--teal);
+    }
+  }
+
+  .inverse {
+    color: white;
+  }
+</style>

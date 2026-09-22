@@ -12,6 +12,10 @@ $gutter-desktop: 64px;
 $gutter-tablet: 36px;
 $gutter-phone: 28px;
 
+// Sticky header height. Also the scroll offset for in-page anchors.
+$header-height: 82px;
+$header-height-tablet: 70px;
+
 // Spacing rhythm and radii that recur across the reference sections.
 $space-2xs: 8px;
 $space-xs: 14px;
