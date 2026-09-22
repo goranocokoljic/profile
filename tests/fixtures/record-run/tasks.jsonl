@@ -1,0 +1,3 @@
+{"issue":12,"attempt":1,"ts":"2026-09-23T00:27:00.7357677+02:00","outcome":"ok","billed_cost_usd":10.5031,"phases":[],"review":null,"review_cycles":[]}
+{"issue":13,"attempt":1,"ts":"2026-09-23T01:10:00.0000000+02:00","outcome":"failed","billed_cost_usd":2.1,"phases":[],"review":null,"review_cycles":[]}
+{"issue":13,"attempt":2,"ts":"2026-09-23T00:50:00.0000000+00:00","outcome":"ok","billed_cost_usd":1234.567,"phases":[],"review":null,"review_cycles":[]}

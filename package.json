@@ -15,7 +15,7 @@
     "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\" && npm run test:unit && npm run test:data",
     "test": "playwright test",
     "test:unit": "playwright test -c playwright.unit.config.ts",
-    "test:data": "node --test scripts/export-build-data.test.mjs scripts/externalize-inline.test.mjs"
+    "test:data": "node --test scripts/export-build-data.test.mjs scripts/externalize-inline.test.mjs scripts/record-run.test.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
