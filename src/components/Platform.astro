@@ -1,0 +1,376 @@
+---
+import { site } from '../data/site';
+
+const { platform, markup } = site;
+const { diagram } = platform;
+---
+
+<section class="platform-section" id="platform" aria-labelledby="platform-title">
+  <div class="container platform-grid">
+    <div class="platform-copy">
+      <p class="eyebrow">{platform.eyebrow}</p>
+      <h2 id="platform-title">{platform.title}</h2>
+      <p>{platform.intro1}</p>
+      <p>{platform.intro2}</p>
+      <ul class="platform-role">
+        {platform.roleLabels.map((label) => <li>{label}</li>)}
+      </ul>
+    </div>
+    <div class="platform-visual">
+      <figure class="platform-diagram">
+        <figcaption class="diagram-label">{diagram.label}</figcaption>
+        <p class="visually-hidden">{markup.platformDiagramSummary}</p>
+        <div class="architecture-diagram">
+          <ul class="portal-row">
+            {diagram.portals.map((portal) => <li>{portal}</li>)}
+          </ul>
+          <span class="connector" aria-hidden="true"></span>
+          <div class="platform-core">
+            <strong>{diagram.coreTitle}</strong>
+            <small>{diagram.coreDetail}</small>
+          </div>
+          <span class="connector" aria-hidden="true"></span>
+          <ul class="foundation-row">
+            {diagram.foundation.map((layer) => <li>{layer}</li>)}
+          </ul>
+        </div>
+      </figure>
+      <div class="shift-copy">
+        <h3>{platform.shiftTitle}</h3>
+        <p>{platform.shiftBody}</p>
+      </div>
+      <ul class="metrics">
+        {
+          platform.metrics.map((metric) => (
+            <li class="metric">
+              <strong>{metric.value}</strong>
+              <span>{metric.label}</span>
+              {metric.note && <small>{metric.note}</small>}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+  <div class="container platform-lower">
+    <div class="ownership-block">
+      <h3>{platform.ownershipTitle}</h3>
+      <p>{platform.ownershipBody}</p>
+    </div>
+    <blockquote>{platform.closing}</blockquote>
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  $box-border: #dfe3e1;
+  $box-ink: #555d63;
+  $connector: #9ca7a6;
+
+  %reset-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .platform-section {
+    padding: 98px 0 90px;
+    background: #fbfbf9;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .platform-grid {
+    display: grid;
+    grid-template-columns: 0.86fr 1.14fr;
+    gap: 72px;
+    align-items: start;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    color: var(--teal);
+    font-size: $type-label;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    margin: 0 0 $space-md;
+    text-transform: uppercase;
+  }
+
+  .platform-copy {
+    h2 {
+      font-size: clamp(45px, 4.5vw, 68px);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      margin: 0 0 $space-lg;
+    }
+
+    p:not(.eyebrow) {
+      color: #4a5159;
+      font-size: $type-body;
+      line-height: 1.55;
+    }
+  }
+
+  .platform-role {
+    @extend %reset-list;
+
+    margin-top: 38px;
+    padding-top: $space-md;
+    border-top: 1px solid var(--fine);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    li {
+      font-family: var(--mono);
+      font-size: $type-micro;
+      letter-spacing: 0.08em;
+      padding: 7px 9px;
+      border: 1px solid #d7dcda;
+      color: #555d64;
+    }
+  }
+
+  .platform-diagram {
+    margin: 0;
+  }
+
+  .diagram-label {
+    font-family: var(--mono);
+    font-size: $type-micro;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-bottom: $space-xs;
+  }
+
+  .architecture-diagram {
+    border: 1px solid var(--fine);
+    background: var(--surface);
+    padding: $space-md;
+  }
+
+  .portal-row,
+  .foundation-row {
+    @extend %reset-list;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: $space-2xs;
+
+    li {
+      border: 1px solid $box-border;
+      min-height: 48px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: $type-micro;
+      color: $box-ink;
+      padding: $space-2xs;
+    }
+  }
+
+  .foundation-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  // Downward arrow: a 1px stem with a rotated corner as the head.
+  .connector {
+    display: block;
+    height: 28px;
+    width: 1px;
+    background: $connector;
+    margin: 0 auto;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -3px;
+      width: 6px;
+      height: 6px;
+      border-right: 1px solid $connector;
+      border-bottom: 1px solid $connector;
+      transform: rotate(45deg);
+    }
+  }
+
+  .platform-core {
+    min-height: 106px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: $space-sm $space-md;
+    background: rgb(13 128 117 / 6%);
+    border: 1px solid rgb(13 128 117 / 23%);
+
+    strong {
+      font-size: 20px;
+    }
+
+    small {
+      color: #4f595c;
+      line-height: 1.5;
+    }
+  }
+
+  .shift-copy {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 28px;
+    margin: 30px 0;
+
+    h3 {
+      font-size: 24px;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+
+  .metrics {
+    @extend %reset-list;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--fine);
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .metric {
+    padding: 26px 22px $space-md 0;
+    border-right: 1px solid var(--fine);
+
+    &:not(:first-child) {
+      padding-left: 22px;
+    }
+
+    &:last-child {
+      border-right: 0;
+    }
+
+    strong {
+      display: block;
+      font-size: 35px;
+      letter-spacing: -0.04em;
+      margin-bottom: 7px;
+    }
+
+    span {
+      display: block;
+      font-family: var(--mono);
+      font-size: $type-micro;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 1.4;
+      color: #555e64;
+    }
+
+    small {
+      display: block;
+      margin-top: $space-2xs;
+      color: var(--teal);
+      font-size: 11px;
+    }
+  }
+
+  .platform-lower {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 38px 72px;
+    margin-top: $space-xl;
+  }
+
+  .ownership-block {
+    border-left: 2px solid var(--teal);
+    padding-left: $space-md;
+
+    h3 {
+      margin: 0 0 9px;
+      font-size: 23px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  }
+
+  blockquote {
+    grid-column: 1 / -1;
+    margin: 16px 0 0;
+    padding: 32px 36px;
+    background: var(--surface);
+    border: 1px solid var(--fine);
+    border-left: 3px solid var(--teal);
+    font-family: Georgia, serif;
+    font-size: 25px;
+    line-height: 1.38;
+    font-style: italic;
+    max-width: 1000px;
+    justify-self: end;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: $bp-tablet) {
+    .platform-grid {
+      grid-template-columns: 1fr;
+      gap: 52px;
+    }
+
+    .platform-lower,
+    .shift-copy {
+      grid-template-columns: 1fr;
+    }
+
+    // The diagram reads top to bottom as one column of boxes.
+    .portal-row,
+    .foundation-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .metrics {
+      grid-template-columns: 1fr;
+    }
+
+    .metric,
+    .metric:not(:first-child) {
+      padding: 20px 0;
+      border-right: 0;
+      border-bottom: 1px solid var(--fine);
+    }
+
+    .metric:last-child {
+      border-bottom: 0;
+    }
+
+    blockquote {
+      font-size: 21px;
+      padding: 26px $space-md;
+    }
+  }
+</style>

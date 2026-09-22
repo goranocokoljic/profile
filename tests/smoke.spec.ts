@@ -204,7 +204,7 @@ test('homepage sections sit in order after the hero', async ({ page }) => {
   const classes = await page.locator('main > section').evaluateAll((sections) =>
     sections.map((s) => s.classList[0]),
   );
-  expect(classes.slice(0, 3)).toEqual(['hero', 'role-fit', 'selected-work']);
+  expect(classes.slice(0, 4)).toEqual(['hero', 'role-fit', 'selected-work', 'platform-section']);
 });
 
 test('homepage headings step down without skipping a level', async ({ page }) => {
@@ -233,13 +233,18 @@ test('selected work is #work and lists three numbered links', async ({ page }) =
   }
 });
 
-// The targets land with #5 (platform), #6 (ai) and #7 (vismedic).
-test.fixme('selected-work hrefs resolve to elements on the page', async ({ page }) => {
-  await page.goto('/');
-  for (const item of site.selected.items) {
-    await expect(page.locator(item.href)).toHaveCount(1);
-  }
-});
+// One test per target, so each un-fixmes as its section lands: #ai with #6,
+// #vismedic with #7.
+const LANDED_TARGETS = new Set(['#platform']);
+for (const item of site.selected.items) {
+  const title = `selected-work link ${item.href} resolves to a section on the page`;
+  const body = async ({ page }: { page: Page }) => {
+    await page.goto('/');
+    await expect(page.locator(`main section${item.href}`)).toHaveCount(1);
+  };
+  if (LANDED_TARGETS.has(item.href)) test(title, body);
+  else test.fixme(title, body);
+}
 
 test('selected-work links show a visible focus ring and the hover colour on focus', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -295,4 +300,132 @@ test('role fit collapses to one column at the 900px breakpoint', async ({ page }
   expect(await columns()).toBe(2);
   await page.setViewportSize({ width: 900, height: 900 });
   expect(await columns()).toBe(1);
+});
+
+test('platform section shows all of its copy from site.ts', async ({ page }) => {
+  const { platform } = site;
+  await page.goto('/');
+  const section = page.locator('main section#platform');
+  await expect(section).toHaveAccessibleName(platform.title);
+  await expect(section.locator('.eyebrow')).toHaveText(platform.eyebrow);
+  await expect(section.locator('h2')).toHaveText(platform.title);
+  await expect(section.locator('.platform-copy p:not(.eyebrow)')).toHaveText([platform.intro1, platform.intro2]);
+  await expect(section.locator('.platform-role li')).toHaveText(platform.roleLabels);
+  await expect(section.locator('figcaption')).toHaveText(platform.diagram.label);
+  await expect(section.locator('.platform-core strong')).toHaveText(platform.diagram.coreTitle);
+  await expect(section.locator('.platform-core small')).toHaveText(platform.diagram.coreDetail);
+  await expect(section.locator('h3')).toHaveText([platform.shiftTitle, platform.ownershipTitle]);
+  await expect(section.locator('.shift-copy p')).toHaveText(platform.shiftBody);
+  await expect(section.locator('.ownership-block p')).toHaveText(platform.ownershipBody);
+  await expect(section.locator('blockquote')).toHaveText(platform.closing);
+});
+
+test('platform diagram has 5 portal boxes and 4 foundation boxes, built in HTML', async ({ page }) => {
+  await page.goto('/');
+  const diagram = page.locator('#platform figure.platform-diagram');
+  const portals = diagram.locator('.portal-row > li');
+  const foundation = diagram.locator('.foundation-row > li');
+  await expect(portals).toHaveCount(5);
+  await expect(foundation).toHaveCount(4);
+  await expect(portals).toHaveText(site.platform.diagram.portals);
+  await expect(foundation).toHaveText(site.platform.diagram.foundation);
+  await expect(diagram.locator('img, svg, canvas')).toHaveCount(0);
+  const connectors = diagram.locator('.connector');
+  await expect(connectors).toHaveCount(2);
+  for (const connector of await connectors.all()) {
+    await expect(connector).toHaveAttribute('aria-hidden', 'true');
+  }
+});
+
+test('platform diagram has a visually hidden summary for screen readers', async ({ page }) => {
+  await page.goto('/');
+  const figure = page.locator('#platform figure.platform-diagram');
+  const summary = figure.locator('.visually-hidden');
+  await expect(summary).toHaveText(site.markup.platformDiagramSummary);
+  // Clipped to 1px, but not display: none, so it stays in the accessibility tree.
+  const box = (await summary.boundingBox())!;
+  expect(box.width).toBeLessThanOrEqual(1);
+  expect(box.height).toBeLessThanOrEqual(1);
+  const tree = await figure.ariaSnapshot();
+  expect(tree).toContain(site.markup.platformDiagramSummary);
+});
+
+test('platform shows three metrics, with a note only where site.ts has one', async ({ page }) => {
+  await page.goto('/');
+  const metrics = page.locator('#platform .metrics > .metric');
+  await expect(metrics).toHaveCount(3);
+  await expect(metrics.locator('strong')).toHaveText(site.platform.metrics.map((m) => m.value));
+  await expect(metrics.locator('span')).toHaveText(site.platform.metrics.map((m) => m.label));
+  const notes = site.platform.metrics.flatMap((m) => (m.note ? [m.note] : []));
+  expect(notes.length).toBeGreaterThan(0);
+  for (const [i, metric] of site.platform.metrics.entries()) {
+    const note = metrics.nth(i).locator('small');
+    if (metric.note) await expect(note).toHaveText(metric.note);
+    else await expect(note).toHaveCount(0);
+  }
+});
+
+const columnCount = (page: Page, selector: string) =>
+  page.locator(selector).evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+
+test('at 1440px platform has two columns and the diagram rows sit side by side', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  expect(await columnCount(page, '.platform-grid')).toBe(2);
+  expect(await columnCount(page, '.portal-row')).toBe(5);
+  expect(await columnCount(page, '.foundation-row')).toBe(4);
+  expect(await columnCount(page, '.metrics')).toBe(3);
+  expect(await columnCount(page, '.platform-lower')).toBe(2);
+  const copy = (await page.locator('.platform-copy').boundingBox())!;
+  const visual = (await page.locator('.platform-visual').boundingBox())!;
+  expect(visual.x).toBeGreaterThanOrEqual(copy.x + copy.width - 1);
+  const portals = page.locator('.portal-row > li');
+  const first = (await portals.first().boundingBox())!;
+  const last = (await portals.last().boundingBox())!;
+  expect(Math.abs(last.y - first.y)).toBeLessThanOrEqual(1);
+});
+
+for (const width of [900, 390]) {
+  test(`at ${width}px the platform diagram is a vertical stack`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    expect(await columnCount(page, '.platform-grid')).toBe(1);
+    expect(await columnCount(page, '.platform-lower')).toBe(1);
+    // Every box, top to bottom: the portals, the core, then the foundation.
+    const boxes = await page
+      .locator('.architecture-diagram')
+      .locator('.portal-row > li, .platform-core, .foundation-row > li')
+      .evaluateAll((els) =>
+        els.map((el) => {
+          const r = el.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        }),
+      );
+    expect(boxes).toHaveLength(10);
+    for (const box of boxes) {
+      expect(box.width).toBeGreaterThan(0);
+      expect(box.height).toBeGreaterThan(0);
+    }
+    for (let i = 1; i < boxes.length; i++) {
+      expect(boxes[i].top).toBeGreaterThanOrEqual(boxes[i - 1].bottom);
+    }
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(overflow).toBe(false);
+  });
+}
+
+test('the platform diagram switches to a stack at the 900px breakpoint', async ({ page }) => {
+  await page.setViewportSize({ width: 901, height: 900 });
+  await page.goto('/');
+  expect(await columnCount(page, '.portal-row')).toBe(5);
+  expect(await columnCount(page, '.foundation-row')).toBe(4);
+  await page.setViewportSize({ width: 900, height: 900 });
+  expect(await columnCount(page, '.portal-row')).toBe(1);
+  expect(await columnCount(page, '.foundation-row')).toBe(1);
+});
+
+test('at 390px the platform metrics stack in one column', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto('/');
+  expect(await columnCount(page, '.metrics')).toBe(1);
 });
