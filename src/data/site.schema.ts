@@ -1,3 +1,4 @@
+// zod 4 from the `zod` package, not the zod 3 re-exported by `astro/zod`.
 import { z } from 'zod';
 
 // Mirrors `window.siteCopy` in design-reference/site/content.js, plus a `pages`
@@ -41,7 +42,7 @@ const selected = z.strictObject({
       z.strictObject({
         number: text,
         title: text,
-        href: text.startsWith('#'),
+        href: z.string().regex(/^#[\w-]+$/),
       }),
     )
     .min(1),

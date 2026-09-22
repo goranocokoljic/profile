@@ -37,12 +37,6 @@ function strings(value: unknown, path = 'site'): [string, string][] {
   return [];
 }
 
-const withoutKey = (site: Site): unknown => {
-  const copy = structuredClone(site) as unknown as Record<string, Record<string, unknown>>;
-  delete copy.hero.eyebrow;
-  return copy;
-};
-
 test('site.ts parses against the schema', async () => {
   await expect(loadSite()).resolves.toBeDefined();
 });
@@ -69,7 +63,10 @@ test('every selected-work href is an in-page anchor', async () => {
 });
 
 test('a missing key fails with a readable error naming its path', async () => {
-  const broken = withoutKey(await loadSite());
+  const site = await loadSite();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { eyebrow, ...hero } = site.hero;
+  const broken = { ...site, hero };
   const failure = readable(() => SiteSchema.parse(broken));
   await expect(failure).rejects.toThrow('src/data/site.ts does not match SiteSchema');
   await expect(failure).rejects.toThrow('→ at hero.eyebrow');
@@ -79,12 +76,12 @@ test('non-zod errors pass through unchanged', async () => {
   await expect(readable(() => { throw new Error('boom'); })).rejects.toThrow(/^boom$/);
 });
 
-test('an unknown key, an empty string and a bad href are rejected at their path', async () => {
+test('an unknown key, an empty string and a bad href are rejected at their path or key', async () => {
   const site = await loadSite();
   const withBadHref = structuredClone(site);
   withBadHref.selected.items[0].href = 'platform';
   const cases: [unknown, string][] = [
-    [{ ...site, hero: { ...site.hero, typo: 'x' } }, 'at hero'],
+    [{ ...site, hero: { ...site.hero, typo: 'x' } }, 'Unrecognized key: "typo"'],
     [{ ...site, nav: { ...site.nav, work: '' } }, 'at nav.work'],
     [withBadHref, 'at selected.items[0].href'],
   ];

@@ -43,7 +43,7 @@ test('reference tokens reach the page at runtime', async ({ page }) => {
 test('homepage h1 is the hero headline from site.ts', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(site.pages.home.title);
-  const h1 = page.locator('h1');
-  await expect(h1).toHaveText(`${site.hero.headlineStart} ${site.hero.headlineEmphasis}`);
-  await expect(h1.locator('.headline-emphasis')).toHaveText(site.hero.headlineEmphasis);
+  const spans = page.locator('h1 > span');
+  await expect(spans).toHaveText([site.hero.headlineStart, site.hero.headlineEmphasis]);
+  await expect(spans.nth(1)).toHaveClass('headline-emphasis');
 });
