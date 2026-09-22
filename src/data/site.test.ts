@@ -4,21 +4,24 @@ import { test, expect } from '@playwright/test';
 import { z } from 'zod';
 import { SiteSchema, type Site } from './site.schema';
 
-// Import site.ts here rather than at the top, so a failed parse is reported as
-// a readable path list instead of a raw ZodError dump.
-async function loadSite(): Promise<Site> {
-  try {
-    return (await import('./site')).site;
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      throw new Error(`src/data/site.ts does not match SiteSchema:\n${z.prettifyError(err)}`);
-    }
-    throw err;
-  }
+// Turn a ZodError into a readable list of paths; anything else passes through.
+function readable<T>(load: () => T | Promise<T>): Promise<T> {
+  return Promise.resolve()
+    .then(load)
+    .catch((err: unknown) => {
+      if (err instanceof z.ZodError) {
+        throw new Error(`src/data/site.ts does not match SiteSchema:\n${z.prettifyError(err)}`);
+      }
+      throw err;
+    });
 }
 
+// Import site.ts here rather than at the top, so a failed parse is reported
+// through `readable` instead of as a raw ZodError dump.
+const loadSite = (): Promise<Site> => readable(async () => (await import('./site')).site);
+
 function referenceCopy(): unknown {
-  const source = readFileSync('design-reference/site/content.js', 'utf8');
+  const source = readFileSync(new URL('../../design-reference/site/content.js', import.meta.url), 'utf8');
   const sandbox: { window: { siteCopy?: unknown } } = { window: {} };
   runInNewContext(source, sandbox);
   return sandbox.window.siteCopy;
@@ -34,33 +37,29 @@ function strings(value: unknown, path = 'site'): [string, string][] {
   return [];
 }
 
-// buildStory metric values are empty in the reference; build data fills them.
-const PLACEHOLDER = /^site\.buildStory\.metrics\.\d+\.1$/;
+const withoutKey = (site: Site): unknown => {
+  const copy = structuredClone(site) as unknown as Record<string, Record<string, unknown>>;
+  delete copy.hero.eyebrow;
+  return copy;
+};
 
 test('site.ts parses against the schema', async () => {
-  const site = await loadSite();
-  expect(site.hero.headlineStart.length).toBeGreaterThan(0);
+  await expect(loadSite()).resolves.toBeDefined();
 });
 
 test('copy matches content.js verbatim', async () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { pages, ...copy } = await loadSite();
-  expect(pages.home.title).toBeTruthy();
   expect(copy).toEqual(referenceCopy());
 });
 
-test('every string is non-empty', async () => {
-  const empty = strings(await loadSite())
-    .filter(([path, value]) => value.length === 0 && !PLACEHOLDER.test(path))
-    .map(([path]) => path);
-  expect(empty).toEqual([]);
-});
-
-test('the only empty strings are the build-metric placeholders', async () => {
-  const empty = strings(await loadSite()).filter(([, value]) => value.length === 0);
+test('every string is non-empty except the build-metric placeholders', async () => {
+  // buildStory metric values are empty in the reference; build data fills them.
   const site = await loadSite();
-  expect(empty.map(([path]) => path)).toEqual(
-    site.buildStory.metrics.map((_, i) => `site.buildStory.metrics.${i}.1`),
-  );
+  const empty = strings(site)
+    .filter(([, value]) => value.length === 0)
+    .map(([path]) => path);
+  expect(empty).toEqual(site.buildStory.metrics.map((_, i) => `site.buildStory.metrics.${i}.1`));
 });
 
 test('every selected-work href is an in-page anchor', async () => {
@@ -69,24 +68,29 @@ test('every selected-work href is an in-page anchor', async () => {
   for (const item of selected.items) expect(item.href).toMatch(/^#/);
 });
 
-test('a missing key fails with an error naming its path', async () => {
-  const copy = structuredClone(await loadSite()) as Record<string, Record<string, unknown>>;
-  delete copy.hero.eyebrow;
-  const result = SiteSchema.safeParse(copy);
-  expect(result.success).toBe(false);
-  expect(z.prettifyError(result.error!)).toContain('at hero.eyebrow');
+test('a missing key fails with a readable error naming its path', async () => {
+  const broken = withoutKey(await loadSite());
+  const failure = readable(() => SiteSchema.parse(broken));
+  await expect(failure).rejects.toThrow('src/data/site.ts does not match SiteSchema');
+  await expect(failure).rejects.toThrow('→ at hero.eyebrow');
 });
 
-test('an unknown key, an empty string and a bad href are rejected', async () => {
+test('non-zod errors pass through unchanged', async () => {
+  await expect(readable(() => { throw new Error('boom'); })).rejects.toThrow(/^boom$/);
+});
+
+test('an unknown key, an empty string and a bad href are rejected at their path', async () => {
   const site = await loadSite();
-  const withExtra = { ...site, hero: { ...site.hero, typo: 'x' } };
-  const withEmpty = { ...site, nav: { ...site.nav, work: '' } };
   const withBadHref = structuredClone(site);
   withBadHref.selected.items[0].href = 'platform';
-
-  expect(SiteSchema.safeParse(withExtra).success).toBe(false);
-  expect(SiteSchema.safeParse(withEmpty).success).toBe(false);
-  const bad = SiteSchema.safeParse(withBadHref);
-  expect(bad.success).toBe(false);
-  expect(z.prettifyError(bad.error!)).toContain('at selected.items[0].href');
+  const cases: [unknown, string][] = [
+    [{ ...site, hero: { ...site.hero, typo: 'x' } }, 'at hero'],
+    [{ ...site, nav: { ...site.nav, work: '' } }, 'at nav.work'],
+    [withBadHref, 'at selected.items[0].href'],
+  ];
+  for (const [input, path] of cases) {
+    const result = SiteSchema.safeParse(input);
+    expect(result.success).toBe(false);
+    expect(z.prettifyError(result.error!)).toContain(path);
+  }
 });

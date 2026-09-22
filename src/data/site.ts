@@ -2,6 +2,7 @@ import { SiteSchema } from './site.schema';
 
 // Copy from design-reference/site/content.js, verbatim. Do not reword here;
 // copy changes start in the reference. `pages` is the only addition.
+// Parsed at build time; islands get copy as props, never by importing this.
 export const site = SiteSchema.parse({
   nav: { work:'Work', build:'How this was built', about:'About', contact:'Contact', cv:'Download CV' },
   hero: {
