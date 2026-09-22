@@ -8,6 +8,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
+  // Visual baselines (tests/polish.spec.ts), one set per platform.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{platform}{ext}',
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.002 } },
   use: {
     baseURL: `http://localhost:${PORT}`,
   },

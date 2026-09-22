@@ -123,7 +123,7 @@ test('at 1440px background and contact match the reference layout', async ({ pag
   await expect(bg.locator('h2')).toHaveCSS('letter-spacing', '-3.384px');
   await expect(bg.locator('.eyebrow')).toHaveCSS('font-family', /IBM Plex Mono/);
   await expect(bg.locator('.background-paragraphs p')).toHaveCSS('color', 'rgb(97, 104, 113)');
-  await expect(bg.locator('.cv-line a')).toHaveCSS('color', 'rgb(13, 128, 117)');
+  await expect(bg.locator('.cv-line a')).toHaveCSS('color', 'rgb(12, 124, 114)');
   const grid = (await bg.locator('.background-grid').boundingBox())!;
   expect(grid.width).toBe(820);
   expect(Math.round(grid.x)).toBe((1440 - 820) / 2);

@@ -1,22 +1,39 @@
 # Application site — Lead Web Engineer
 
-This is my application for a Lead Web Engineer role, built as software.
-The site is a one-page portfolio (platform engineering, AI engineering, VisMedic)
-plus a `/build` page that shows how the site itself was made.
+This is my application for a Lead Web Engineer role, built as software: a
+one-page portfolio (platform engineering, AI engineering, VisMedic) plus a
+`/build` page that shows how the site itself was made. Every change is one
+GitHub issue, implemented, reviewed and merged autonomously by **tr-harness**.
 
-Every change to this repository is one GitHub issue, implemented autonomously by
-**tr-harness**: read issue → branch → implement → build & test → open PR →
-independent multi-lens review → fix → verify state → merge. The human part is the
-intent: the content, the design reference, `CLAUDE.md` and the issues themselves.
-Everything else is in the PRs, with the review threads left as they happened.
+`issue → branch → implement → build & test → PR → multi-lens review → fix → merge → record`
 
-- Live site: _(Cloudflare Pages URL after the first merge)_
-- Build record: `/build` — every run's duration, billed cost, review cycles and
-  findings, for this repo and, as a frozen comparison, for the 170+ runs tr-harness
-  did on my previous project
+The five most recent runs, rendered from `data/build/site/tasks.jsonl` by
+`npm run readme:runs` (a unit test checks every row against that file):
+
+<!-- run-table:start -->
+| Issue | Outcome | Review cycles | Findings | Billed | Wall time |
+| --- | --- | ---: | ---: | ---: | ---: |
+| [#13 `record-run` script and telemetry commit contract](https://github.com/goranocokoljic/profile/issues/13) | ok | 1 | 27 | $6.65 | 15m |
+| [#12 Homepage build-record card (React island)](https://github.com/goranocokoljic/profile/issues/12) | ok | 1 | 44 | $10.50 | 33m |
+| [#11 `/build` page](https://github.com/goranocokoljic/profile/issues/11) | ok | 1 | 22 | $3.71 | 8m |
+| [#10 Port the dashboard renderer with a dataset toggle](https://github.com/goranocokoljic/profile/issues/10) | ok | 1 | 33 | $8.93 | 23m |
+| [#9 Build-record data: exporter, payload schema and frozen snapshot](https://github.com/goranocokoljic/profile/issues/9) | ok | 1 | 26 | $6.29 | 12m |
+<!-- run-table:end -->
+
+- Build record: [`/build`](https://go-profile.goran-ocokoljic.workers.dev/build) —
+  every run's duration, billed cost, review cycles and findings, for this repo
+  and, as a frozen comparison, for the 170+ runs tr-harness did on my previous
+  project
 - Harness manual: [`docs/tr-harness.md`](docs/tr-harness.md)
 - Related: [PureContext](https://github.com/goranocokoljic/pure-context), the MCP
   server that gives the agents compact code context and a change-safety loop
+
+Commits authored by *tr-harness telemetry* are automated records of runs, not
+code changes. The contract is in [`docs/telemetry.md`](docs/telemetry.md).
+
+The human part is the intent: the content, the design reference, `CLAUDE.md`
+and the issues themselves. Everything else is in the PRs, with the review
+threads left as they happened.
 
 ## Layout
 
@@ -39,16 +56,11 @@ npm run dev        # site with live reload
 npm run check      # astro check, tsc, eslint, stylelint
 npm run test       # Playwright smoke tests
 npm run build      # prebuild exports data/build/**/*.jsonl → public/build/data.json
+npm run readme:runs  # refresh the run table above from data/build/site/tasks.jsonl
 ```
 
 ## About the numbers on `/build`
 
 `billed_cost_usd` per run is the authoritative figure. Per-phase and per-cycle
 costs are estimates apportioned from the run total and are labelled as such.
-Durations and findings counts are measured. Commits authored by *tr-harness
-telemetry* are automated records of runs, not code changes.
-
-## Status
-
-Repository skeleton committed by hand. Tasks #1–#14 are queued for tr-harness;
-this README's first screen will show a real run record once the queue has run.
+Durations and findings counts are measured.

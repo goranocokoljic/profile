@@ -11,11 +11,12 @@
     "prebuild": "node scripts/export-build-data.mjs",
     "build": "astro build",
     "build:meta": "node scripts/export-build-data.mjs --write-meta",
+    "readme:runs": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/readme-run-table.mjs",
     "preview": "astro preview",
     "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\" && npm run test:unit && npm run test:data",
     "test": "playwright test",
     "test:unit": "playwright test -c playwright.unit.config.ts",
-    "test:data": "node --test scripts/export-build-data.test.mjs scripts/externalize-inline.test.mjs scripts/record-run.test.mjs"
+    "test:data": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/export-build-data.test.mjs scripts/externalize-inline.test.mjs scripts/record-run.test.mjs scripts/readme-run-table.test.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",

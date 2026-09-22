@@ -131,10 +131,8 @@ for (const width of [1440, 390]) {
   test(`axe finds no violations in the ai section at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    // color-contrast is off: the reference --teal (#0D8075) on --bg (#F7F7F5) is
-    // 4.49:1, just under AA for small text. It is a site-wide token issue (the
-    // hero eyebrow has it too), noted in the #6 PR, not an #ai fix.
-    const results = await new AxeBuilder({ page }).include('#ai').disableRules(['color-contrast']).analyze();
+    // Teal text uses --teal-text since #14, so color-contrast is checked too.
+    const results = await new AxeBuilder({ page }).include('#ai').analyze();
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(', ')}`)).toEqual([]);
   });
 }
@@ -163,7 +161,7 @@ test('at 1440px the ai section lays out in the reference columns', async ({ page
   await expect(ai$.locator('.ai-dev-copy h3')).toHaveCSS('font-size', '31px');
   await expect(ai$.locator('.ai-intro-copy')).toHaveCSS('font-size', '17px');
   await expect(ai$.locator('.mini-label').first()).toHaveCSS('font-size', '10px');
-  await expect(ai$.locator('.mini-label').first()).toHaveCSS('color', 'rgb(13, 128, 117)');
+  await expect(ai$.locator('.mini-label').first()).toHaveCSS('color', 'rgb(12, 124, 114)');
   expect(await ai$.locator('.mini-label').first().evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/IBM Plex Mono/);
   await expect(ai$.locator('.qa-zone')).toHaveCSS('background-color', 'rgb(251, 251, 249)');
   await expect(ai$.locator('.closing-quote')).toHaveCSS('font-size', '23px');

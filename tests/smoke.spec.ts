@@ -335,7 +335,7 @@ test('selected-work links show a visible focus ring and the hover colour on focu
     });
     expect(style.outline).toBe('solid');
     expect(style.width).toBe('2px');
-    expect(style.color).toBe('rgb(13, 128, 117)');
+    expect(style.color).toBe('rgb(12, 124, 114)');
     expect(style.border).toBe('rgb(13, 128, 117)');
     expect(style.color).not.toBe(resting);
   }
@@ -346,7 +346,7 @@ test('selected-work links take the teal hover state', async ({ page }) => {
   await page.goto('/');
   const link = page.locator('#work a.selected-link').first();
   await link.hover();
-  await expect(link).toHaveCSS('color', 'rgb(13, 128, 117)');
+  await expect(link).toHaveCSS('color', 'rgb(12, 124, 114)');
   await expect(link).toHaveCSS('border-bottom-color', 'rgb(13, 128, 117)');
 });
 

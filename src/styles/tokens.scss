@@ -39,6 +39,39 @@ $type-small: 14px;
 $type-label: 12px;
 $type-micro: 10px;
 
+// Touch screens get a hit area of at least 44 × 44 px (WCAG 2.5.5, target
+// size); fine pointers keep the reference geometry.
+
+// touch-target, for links: nothing moves, a transparent ::after grows the hit
+// area around the element. Only for elements that do not use ::after
+// themselves, and neighbours need 44px from centre to centre or the areas
+// overlap.
+@mixin touch-target {
+  @media (pointer: coarse) {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+// touch-size, for buttons: they centre their content, so they simply grow.
+// Used where an overlay would cover a close neighbour (segmented controls,
+// table rows, a scroller that would clip it).
+@mixin touch-size {
+  @media (pointer: coarse) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
 :root {
   --bg: #F7F7F5;
   --surface: #FFFFFF;
@@ -46,6 +79,10 @@ $type-micro: 10px;
   --muted: #616871;
   --fine: #E2E5E4;
   --teal: #0D8075;
+
+  // --teal as text on --bg is 4.48:1, just under AA (4.5:1). Text uses this
+  // slightly darker teal (4.73:1 on --bg); fills and rules keep --teal.
+  --teal-text: #0C7C72;
   --lime: #B7E85B;
   --gradient-start: #0C867B;
   --gradient-end: #55A98A;

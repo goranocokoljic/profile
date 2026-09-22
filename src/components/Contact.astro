@@ -66,7 +66,15 @@ const external = [
     gap: 17px;
     padding-top: 10px;
 
+    // 26px links + 18px = 44px from centre to centre, so the grown touch
+    // areas do not overlap.
+    @media (pointer: coarse) {
+      gap: 18px;
+    }
+
     a {
+      @include touch-target;
+
       border-bottom: 1px solid var(--dark-rule);
       padding-bottom: 5px;
 

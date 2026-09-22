@@ -44,6 +44,8 @@ const { selected } = site;
   }
 
   .selected-link {
+    @include touch-target;
+
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 16px;
@@ -54,7 +56,7 @@ const { selected } = site;
     &:hover,
     &:focus-visible {
       border-color: var(--teal);
-      color: var(--teal);
+      color: var(--teal-text);
     }
 
     strong {
@@ -64,7 +66,7 @@ const { selected } = site;
 
   .selected-number {
     font-family: var(--mono);
-    color: var(--teal);
+    color: var(--teal-text);
     font-size: 13px;
   }
 
