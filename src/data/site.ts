@@ -107,6 +107,9 @@ export const site = SiteSchema.parse({
     monogram:'GO', homeLabel:'Goran Ocokoljić home', navLabel:'Primary navigation',
     portraitAlt:'Goran Ocokoljić',
     platformDiagramSummary:'Platform evolution: 20+ portals run on one shared News Theme platform, which is built on shared routing, components, APIs and infrastructure.',
-    cvHref:'/goran-ocokoljic-cv.pdf'
+    cvHref:'/goran-ocokoljic-cv.pdf',
+    pureContextHref:'https://github.com/goranocokoljic/pure-context',
+    newTabLabel:'(opens in a new tab)',
+    changeSafetyLoop:['prepare_change','edit','verify_change','compare_change_impact']
   }
 });

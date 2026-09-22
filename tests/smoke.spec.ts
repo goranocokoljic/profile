@@ -204,7 +204,7 @@ test('homepage sections sit in order after the hero', async ({ page }) => {
   const classes = await page.locator('main > section').evaluateAll((sections) =>
     sections.map((s) => s.classList[0]),
   );
-  expect(classes.slice(0, 4)).toEqual(['hero', 'role-fit', 'selected-work', 'platform-section']);
+  expect(classes.slice(0, 5)).toEqual(['hero', 'role-fit', 'selected-work', 'platform-section', 'ai-section']);
 });
 
 test('homepage headings step down without skipping a level', async ({ page }) => {
@@ -233,18 +233,21 @@ test('selected work is #work and lists three numbered links', async ({ page }) =
   }
 });
 
-// One test per target, so each un-fixmes as its section lands: #ai with #6,
-// #vismedic with #7.
-const LANDED_TARGETS = new Set(['#platform']);
+// Targets whose section has not landed yet: #vismedic lands with #7. A pending
+// target must be absent, so the issue that adds it has to take it off this list.
+const PENDING_TARGETS = new Set(['#vismedic']);
 for (const item of site.selected.items) {
-  const title = `selected-work link ${item.href} resolves to a section on the page`;
-  const body = async ({ page }: { page: Page }) => {
+  const pending = PENDING_TARGETS.has(item.href);
+  test(`selected-work link ${item.href} ${pending ? 'is still pending' : 'resolves to a section on the page'}`, async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator(`main section${item.href}`)).toHaveCount(1);
-  };
-  if (LANDED_TARGETS.has(item.href)) test(title, body);
-  else test.fixme(title, body);
+    await expect(page.locator(`main section${item.href}`)).toHaveCount(pending ? 0 : 1);
+  });
 }
+
+test('every pending target is a selected-work link', () => {
+  const hrefs = site.selected.items.map((item) => item.href);
+  for (const target of PENDING_TARGETS) expect(hrefs).toContain(target);
+});
 
 test('selected-work links show a visible focus ring and the hover colour on focus', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });

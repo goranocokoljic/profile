@@ -1,0 +1,507 @@
+---
+import { site } from '../data/site';
+
+const { ai, markup } = site;
+const step = (i: number) => String(i + 1).padStart(2, '0');
+---
+
+<section class="ai-section" id="ai" aria-labelledby="ai-title">
+  <div class="container ai-intro">
+    <div>
+      <p class="eyebrow">{ai.eyebrow}</p>
+      <h2 id="ai-title">{ai.title}</h2>
+    </div>
+    <div class="ai-intro-copy">
+      <p>{ai.intro1}</p>
+      <p>{ai.intro2}</p>
+    </div>
+  </div>
+
+  <div class="container ai-dev-grid">
+    <div class="ai-dev-copy">
+      <p class="mini-label">{ai.devLabel}</p>
+      <h3>{ai.devTitle}</h3>
+      <p>{ai.devBody}</p>
+    </div>
+    <ol class="flow-stack">
+      {
+        ai.devFlow.map((name, i) => (
+          <li class="flow-step">
+            <span aria-hidden="true">{step(i)}</span>
+            <strong>{name}</strong>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <div class="container ai-two-col">
+    <article class="ai-card context-card">
+      <p class="mini-label">{ai.contextLabel}</p>
+      <h3>{ai.contextTitle}</h3>
+      <p>{ai.contextBody}</p>
+      <ul class="lens-row">
+        {markup.changeSafetyLoop.map((tool) => <li>{tool}</li>)}
+      </ul>
+      <a class="text-link" href={markup.pureContextHref} target="_blank" rel="noopener">
+        {ai.contextLink}<span class="visually-hidden"> {markup.newTabLabel}</span>
+      </a>
+    </article>
+    <article class="ai-card review-card">
+      <p class="mini-label">{ai.reviewLabel}</p>
+      <h3>{ai.reviewTitle}</h3>
+      <p>{ai.reviewBody}</p>
+      <ul class="lens-row">
+        {ai.lenses.map((lens) => <li>{lens}</li>)}
+      </ul>
+      <blockquote class="finished-statement">
+        <p class="finished-quote">{ai.finished}</p>
+        <p>{ai.finishedBody}</p>
+      </blockquote>
+    </article>
+  </div>
+
+  <div class="container limits-row">
+    <div class="limits-copy">
+      <p class="mini-label">{ai.limitsLabel}</p>
+      <h3>{ai.limitsTitle}</h3>
+      <p>{ai.limitsBody}</p>
+    </div>
+    <ul class="control-flow">
+      {
+        ai.controls.map(([name, detail]) => (
+          <li class="control-step">
+            <strong>{name}</strong>
+            <span>{detail}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="qa-zone">
+    <div class="container qa-grid">
+      <div class="qa-copy">
+        <p class="mini-label">{ai.qaLabel}</p>
+        <h3>{ai.qaTitle}</h3>
+        <p>{ai.qaBody}</p>
+      </div>
+      <div>
+        <ol class="qa-flow">
+          {
+            ai.qaFlow.map((name, i) => (
+              <li class="qa-step">
+                <span aria-hidden="true">{step(i)}</span>
+                <strong>{name}</strong>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="qa-principles">
+          {
+            ai.qaPrinciples.map((principle) => (
+              <article>
+                <h4>{principle.title}</h4>
+                <p>{principle.body}</p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+    <div class="container findings-panel">
+      <div>
+        <p class="mini-label">{ai.findingsLabel}</p>
+        <h3>{ai.findingsTitle}</h3>
+      </div>
+      <ul>
+        {ai.findings.map((finding) => <li>{finding}</li>)}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container ai-close">
+    <div>
+      <h3>{ai.ownershipTitle}</h3>
+      <p>{ai.ownershipBody}</p>
+    </div>
+    <blockquote class="closing-quote">{ai.closing}</blockquote>
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  $flow-line: rgb(13 128 117 / 35%);
+  $zone-bg: #fbfbf9;
+
+  %reset-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ai-section {
+    padding: $space-3xl 0 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .ai-intro {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 80px;
+    padding-bottom: 70px;
+
+    h2 {
+      font-size: $type-section;
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      margin: 0;
+    }
+  }
+
+  .ai-intro-copy {
+    padding-top: 45px;
+    color: #485058;
+    font-size: $type-body;
+    line-height: 1.6;
+
+    p {
+      margin: 0 0 $space-sm;
+    }
+  }
+
+  h3 {
+    font-size: $type-h3;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    margin: 0 0 $space-sm;
+  }
+
+  .ai-dev-copy,
+  .ai-card,
+  .limits-copy,
+  .qa-copy,
+  .ai-close {
+    > p:not(.mini-label),
+    div > p {
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+
+  .ai-dev-grid {
+    display: grid;
+    grid-template-columns: 0.72fr 1.28fr;
+    gap: 68px;
+    padding: $space-xl 0;
+    border-top: 1px solid var(--fine);
+  }
+
+  .flow-stack {
+    @extend %reset-list;
+
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    // The vertical rail joining the step numbers.
+    &::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 22px;
+      bottom: 22px;
+      width: 1px;
+      background: $flow-line;
+    }
+  }
+
+  .flow-step {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: $space-xs;
+    align-items: center;
+    min-height: 58px;
+    position: relative;
+
+    span {
+      width: 40px;
+      height: 40px;
+      border: 1px solid $flow-line;
+      background: $zone-bg;
+      display: grid;
+      place-items: center;
+      font-family: var(--mono);
+      font-size: $type-micro;
+      color: var(--teal);
+      z-index: 1;
+    }
+
+    strong {
+      border: 1px solid var(--fine);
+      background: var(--surface);
+      padding: 16px $space-sm;
+      font-size: 15px;
+      font-weight: 650;
+    }
+  }
+
+  .ai-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--fine);
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .ai-card {
+    padding: $space-xl 46px $space-xl 0;
+
+    & + & {
+      padding-left: 46px;
+      border-left: 1px solid var(--fine);
+    }
+  }
+
+  .lens-row {
+    @extend %reset-list;
+
+    display: flex;
+    gap: $space-2xs;
+    flex-wrap: wrap;
+    margin: 26px 0;
+
+    li {
+      padding: 9px 12px;
+      border: 1px solid #d9dfdd;
+      background: var(--surface);
+      font-size: $type-label;
+      font-weight: 650;
+    }
+  }
+
+  .finished-statement {
+    margin: 28px 0 0;
+    padding: 22px 0 0 22px;
+    border-left: 2px solid var(--teal);
+
+    .finished-quote {
+      font-family: Georgia, serif;
+      font-size: 25px;
+      font-style: italic;
+      font-weight: 700;
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    p:not(.finished-quote) {
+      margin: $space-2xs 0 0;
+      color: var(--muted);
+      font-size: $type-small;
+      line-height: 1.5;
+    }
+  }
+
+  .limits-row {
+    display: grid;
+    grid-template-columns: 0.72fr 1.28fr;
+    gap: 54px;
+    padding: 60px 0;
+  }
+
+  .control-flow {
+    @extend %reset-list;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: $space-2xs;
+    align-self: center;
+  }
+
+  .control-step {
+    border: 1px solid var(--fine);
+    background: var(--surface);
+    padding: $space-sm 12px;
+    min-height: 112px;
+
+    strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    span {
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+  }
+
+  .qa-zone {
+    background: $zone-bg;
+    border-top: 1px solid var(--fine);
+    border-bottom: 1px solid var(--fine);
+    padding: 68px 0;
+  }
+
+  .qa-grid {
+    display: grid;
+    grid-template-columns: 0.7fr 1.3fr;
+    gap: 60px;
+  }
+
+  .qa-flow {
+    @extend %reset-list;
+
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+  }
+
+  .qa-step {
+    border: 1px solid var(--fine);
+    background: var(--surface);
+    padding: $space-xs $space-2xs;
+    min-height: 92px;
+
+    span {
+      display: block;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--teal);
+      margin-bottom: 12px;
+    }
+
+    strong {
+      font-size: 11px;
+      line-height: 1.3;
+    }
+  }
+
+  .qa-principles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $space-md;
+    margin-top: $space-lg;
+
+    article {
+      border-top: 2px solid rgb(13 128 117 / 45%);
+      padding-top: $space-sm;
+    }
+
+    h4 {
+      font-size: $type-body;
+      margin: 0 0 $space-2xs;
+    }
+
+    p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+
+  .findings-panel {
+    display: grid;
+    grid-template-columns: 0.75fr 1.25fr;
+    gap: 60px;
+    margin-top: 60px;
+    padding-top: 45px;
+    border-top: 1px solid var(--fine);
+
+    ul {
+      @extend %reset-list;
+
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 30px;
+    }
+
+    li {
+      padding: 12px 0 12px 20px;
+      border-bottom: 1px solid var(--fine);
+      position: relative;
+      color: #4f585e;
+
+      &::before {
+        content: '↳';
+        position: absolute;
+        left: 0;
+        color: var(--teal);
+      }
+    }
+  }
+
+  .ai-close {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 70px;
+    padding: 72px 0 96px;
+  }
+
+  .closing-quote {
+    margin: 0;
+    padding: 32px 36px;
+    background: var(--surface);
+    border: 1px solid var(--fine);
+    border-left: 3px solid var(--teal);
+    font-family: Georgia, serif;
+    font-size: 23px;
+    line-height: 1.38;
+    font-style: italic;
+    max-width: 1000px;
+  }
+
+  @media (max-width: $bp-tablet) {
+    .ai-intro,
+    .ai-dev-grid,
+    .limits-row,
+    .qa-grid,
+    .findings-panel,
+    .ai-close {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    // The reference keeps two columns here, which squeezes each card to
+    // ~180px at 390px; its border-top on the second card shows the intent
+    // is a stack.
+    .ai-two-col {
+      grid-template-columns: 1fr;
+    }
+
+    .ai-card {
+      padding: 40px 0;
+
+      & + & {
+        padding-left: 0;
+        border-left: 0;
+        border-top: 1px solid var(--fine);
+      }
+    }
+
+    .control-flow,
+    .qa-flow {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .qa-principles,
+    .findings-panel ul {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .control-flow,
+    .qa-flow {
+      grid-template-columns: 1fr;
+    }
+
+    .closing-quote {
+      padding: 26px $space-md;
+    }
+  }
+</style>

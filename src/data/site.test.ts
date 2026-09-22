@@ -103,3 +103,15 @@ test('markup.cvHref accepts only a site-relative file path', async () => {
     expect(z.prettifyError(result.error!)).toContain('at markup.cvHref');
   }
 });
+
+test('markup.pureContextHref accepts only an absolute https URL', async () => {
+  const site = await loadSite();
+  const parse = (pureContextHref: string) =>
+    SiteSchema.safeParse({ ...site, markup: { ...site.markup, pureContextHref } });
+  expect(parse('https://github.com/goranocokoljic/pure-context').success).toBe(true);
+  for (const bad of ['http://github.com/x', 'javascript:alert(1)', '/pure-context', '#ai', '']) {
+    const result = parse(bad);
+    expect(result.success, bad).toBe(false);
+    expect(z.prettifyError(result.error!)).toContain('at markup.pureContextHref');
+  }
+});
