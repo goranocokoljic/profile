@@ -162,7 +162,14 @@ const contact = z.strictObject({
 // reference copy yet. Kept here so pages hold no strings of their own.
 const pages = z.strictObject({
   home: z.strictObject({ title: text }),
-  build: z.strictObject({ title: text, heading: text, empty: text }),
+  build: z.strictObject({
+    title: text,
+    heading: text,
+    // Build-record dashboard: the empty state and the dataset switch.
+    empty: text,
+    datasetLabel: text,
+    datasets: z.strictObject({ site: text, toprope: text }),
+  }),
 });
 
 // Not in content.js: strings and links the reference writes into index.html,

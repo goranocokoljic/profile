@@ -101,7 +101,11 @@ export const site = SiteSchema.parse({
   },
   pages: {
     home: { title:'Goran Ocokoljić — Lead Web Engineer' },
-    build: { title:'Build record — Goran Ocokoljić', heading:'Build record', empty:'No runs recorded yet.' }
+    build: {
+      title:'Build record — Goran Ocokoljić', heading:'Build record',
+      empty:'No runs recorded yet — the first tr-harness run on this repository will appear here.',
+      datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' }
+    }
   },
   markup: {
     monogram:'GO', homeLabel:'Goran Ocokoljić home', navLabel:'Primary navigation',
