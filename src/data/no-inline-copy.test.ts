@@ -7,8 +7,10 @@ import ts from 'typescript';
 // Content lives only in src/data/site.ts. Best-effort guard: it scans pages
 // and components for template text, prose-bearing attributes and prose-like
 // string literals (in frontmatter, .ts/.tsx and template expressions).
-// Limit: a multi-word lowercase literal in script is flagged even when it is
-// a class list — put class lists in `class` / `class:list`, which are skipped.
+// Limits: single-word literals outside text and prose attributes pass, and
+// <script> bodies are not scanned. A multi-word lowercase literal in script is
+// flagged even when it is a class list — put class lists in `class` /
+// `class:list`, which are skipped.
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const ROOTS = ['src/pages', 'src/components'];
 
@@ -20,7 +22,7 @@ const MARKUP_ATTRS = new Set([
   'points', 'action', 'rel', 'key',
 ]);
 // Attributes read by people or assistive tech: any word counts.
-const PROSE_ATTRS = new Set(['alt', 'title', 'aria-label', 'aria-description', 'placeholder', 'label', 'set:text']);
+const PROSE_ATTRS = new Set(['alt', 'title', 'aria-label', 'aria-description', 'placeholder', 'label', 'set:text', 'set:html']);
 
 type Context = 'markup' | 'prose' | 'default';
 
@@ -123,6 +125,7 @@ function templateCopy(template: string): string[] {
         const q = t[i];
         if (q === '"' || q === "'") {
           const end = t.indexOf(q, i + 1);
+          if (end === -1) throw new Error(`Unterminated ${attr[0]} attribute value`);
           const value = t.slice(i + 1, end);
           if (literalHit(value, attrContext(attr[0]))) hits.push(value);
           i = end + 1;
@@ -176,6 +179,7 @@ test('inlineCopy finds copy in text, attributes and literals', () => {
   expect(inlineCopy(astro('<img alt="20+ portals" />'))).toEqual(['20+ portals']);
   expect(inlineCopy(astro('<Card heading="no runs recorded yet" />'))).toEqual(['no runs recorded yet']);
   expect(inlineCopy(astro('<p set:text="Plain words here" />'))).toEqual(['Plain words here']);
+  expect(inlineCopy(astro('<p set:html={"Written with <b>intent</b>"} />'))).toEqual(['Written with <b>intent</b>']);
   expect(inlineCopy(astro('<p>{x}</p>', "const s = 'I don\\'t ship broken';"))).toEqual(["I don't ship broken"]);
   expect(inlineCopy(astro('<p>{x}</p>', "const f = ['entered state lost after a failed save'];"))).toEqual([
     'entered state lost after a failed save',
@@ -210,12 +214,18 @@ test('inlineCopy ignores markup, code and data references', () => {
   expect(inlineCopy('export function fmt(n: number): string {\n  return n.toFixed(2);\n}', 'ts')).toEqual([]);
 });
 
+test('inlineCopy fails fast on an unterminated attribute value', () => {
+  expect(() => inlineCopy(astro('<a title="oops>Hi</a>'))).toThrow('Unterminated title attribute value');
+});
+
 test('no content strings under src/pages or src/components', () => {
   const scanned = ROOTS.flatMap((root) => {
     try {
       return files(join(REPO, root));
-    } catch {
-      return []; // src/components does not exist until the first section lands
+    } catch (err) {
+      // src/components does not exist until the first section lands.
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+      throw err;
     }
   });
   expect(scanned.length).toBeGreaterThan(0);
