@@ -109,6 +109,9 @@ export const site = SiteSchema.parse({
     platformDiagramSummary:'Platform evolution: 20+ portals run on one shared News Theme platform, which is built on shared routing, components, APIs and infrastructure.',
     cvHref:'/goran-ocokoljic-cv.pdf',
     pureContextHref:'https://github.com/goranocokoljic/pure-context',
+    githubHref:'https://github.com/goranocokoljic',
+    linkedinHref:'https://www.linkedin.com/in/goranocokoljic/',
+    backgroundCvLink:'Download CV →',
     newTabLabel:'(opens in a new tab)',
     changeSafetyLoop:['prepare_change','edit','verify_change','compare_change_impact'],
     vismedicArchive:{

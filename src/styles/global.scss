@@ -96,6 +96,15 @@ a {
   text-underline-offset: 6px;
 }
 
+// The reference's large section heading (.background-copy h2,
+// .contact-section h2 and others). Older sections still carry a scoped copy.
+.section-title {
+  font-size: $type-section;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  margin: 0;
+}
+
 // Clipped, not display: none, so it stays in the accessibility tree.
 .visually-hidden {
   position: absolute;
