@@ -4,6 +4,11 @@
 > Do not edit by hand. These are recurring code-review findings that recurred often
 > enough to graduate into always-loaded project rules. Honor them when writing code.
 
+## security
+
+- **Astro inlines stylesheets by default, which breaks CSP default-src 'self'.** Keep build.inlineStylesheets: 'never' and never add inline <style>/<script> or set:html styles; the dist test asserts no inline style or script.
+  - _Why:_ #1: Astro's default 'auto' inlined global.scss into every page, which a CSP of default-src 'self' blocks, so the site would render unstyled.
+
 ## over-abstraction
 
 - **Port reference-global utility classes once, not as scoped copies per section.** When a reference class (e.g. .eyebrow, .text-link, .mono-label) is used by several sections, put its base rule in src/styles/global.scss and keep only per-section overrides scoped; do not copy the full rule into each component.
