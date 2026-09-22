@@ -22,5 +22,5 @@ test('dist/build/data.json ships both build-record datasets', () => {
   const payload = JSON.parse(readFileSync('dist/build/data.json', 'utf8'));
   expect(Object.keys(payload.datasets).sort()).toEqual(['site', 'toprope']);
   expect(payload.datasets.toprope.frozen).toBe(true);
-  expect(payload.datasets.toprope.tasks).toHaveLength(payload.datasets.toprope.files.tasks.count);
+  expect(payload.datasets.toprope.tasks).toHaveLength(172);
 });

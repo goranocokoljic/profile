@@ -18,10 +18,11 @@
 // lessons (paths into a private codebase; everything else is kept as recorded).
 //
 // Issue metadata (site dataset only): `meta` maps issue -> {title, url, pr, prUrl}.
-// With `gh` on PATH it is read live (one `gh issue list` + one `gh pr list`
-// call); without it, or when `gh` fails (Cloudflare build, no auth, offline),
-// the committed data/build/site/meta.json is used instead. The build never
-// fails on metadata. `npm run build:meta` refreshes meta.json locally.
+// The committed data/build/site/meta.json is the base. With `gh` on PATH, live
+// data (one `gh issue list` + one `gh pr list` call) is laid over it; without
+// gh, or when gh fails (Cloudflare build, no auth, offline), the committed file
+// is used as is. The build never fails on metadata; issues with no meta are
+// listed in the output. `npm run build:meta` refreshes meta.json locally.
 //
 // Usage:
 //   node scripts/export-build-data.mjs              write public/build/data.json
@@ -85,8 +86,8 @@ function omitKeys(row, keys) {
 }
 
 // Runs `gh` and returns parsed JSON, or null when gh is missing or fails.
-function ghJson(args, ghCommand) {
-  const res = spawnSync(ghCommand, args, { encoding: 'utf8', timeout: 30_000, windowsHide: true });
+export function ghJson(args) {
+  const res = spawnSync('gh', args, { encoding: 'utf8', timeout: 30_000, windowsHide: true });
   if (res.error || res.status !== 0) return null;
   try {
     return JSON.parse(res.stdout);
@@ -95,34 +96,24 @@ function ghJson(args, ghCommand) {
   }
 }
 
-// The PR that closed an issue: a `Closes #n` line in its body, or the
-// harness branch name `feat(ure)/issue-<n>-…`. Latest merge wins.
-export function prForIssue(prs, issue) {
-  const closes = new RegExp(`\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\s+#${issue}\\b`, 'i');
-  const branch = new RegExp(`^feat(?:ure)?/issue-${issue}-`);
-  return prs
-    .filter((pr) => closes.test(pr.body ?? '') || branch.test(pr.headRefName ?? ''))
-    .sort((a, b) => String(b.mergedAt ?? '').localeCompare(String(a.mergedAt ?? '')))[0];
-}
-
-// Live metadata for `issues` from gh, or null when gh is unavailable.
-export function fetchMeta(issues, { ghCommand = 'gh' } = {}) {
+// Live metadata for `issues`, or null when gh is unavailable. The PR is the
+// latest merged one GitHub lists as closing the issue (`Closes #n`).
+// `runGh` is `ghJson`; tests pass a stub.
+export function fetchMeta(issues, runGh = ghJson) {
   if (!issues.length) return {};
-  const ghIssues = ghJson(
-    ['issue', 'list', '--state', 'all', '--limit', '1000', '--json', 'number,title,url'],
-    ghCommand,
-  );
+  const ghIssues = runGh(['issue', 'list', '--state', 'all', '--limit', '1000', '--json', 'number,title,url']);
   if (!Array.isArray(ghIssues)) return null;
-  const prs = ghJson(
-    ['pr', 'list', '--state', 'merged', '--limit', '1000', '--json', 'number,url,body,headRefName,mergedAt'],
-    ghCommand,
-  );
+  const prs = runGh([
+    'pr', 'list', '--state', 'merged', '--limit', '1000', '--json', 'number,url,mergedAt,closingIssuesReferences',
+  ]);
   if (!Array.isArray(prs)) return null;
   const meta = {};
   for (const n of issues) {
     const issue = ghIssues.find((i) => i.number === n);
     if (!issue) continue;
-    const pr = prForIssue(prs, n);
+    const pr = prs
+      .filter((p) => p.closingIssuesReferences?.some((ref) => ref.number === n))
+      .sort((a, b) => String(b.mergedAt ?? '').localeCompare(String(a.mergedAt ?? '')))[0];
     meta[n] = { title: issue.title, url: issue.url, pr: pr?.number ?? null, prUrl: pr?.url ?? null };
   }
   return meta;
@@ -143,14 +134,15 @@ function issueNumbers(tasks) {
   return [...seen].sort((a, b) => a - b);
 }
 
-// Live gh metadata when available, the committed meta.json otherwise.
-export async function resolveMeta(dir, tasks, { ghCommand = 'gh' } = {}) {
+// The committed meta.json, overlaid with live gh metadata when available.
+// `live` is null when gh is unavailable.
+export async function resolveMeta(dir, tasks, runGh = ghJson) {
   const committed = await readMetaFile(path.join(dir, META_FILE));
-  const live = fetchMeta(issueNumbers(tasks), { ghCommand });
-  return live ? { ...committed, ...live } : committed;
+  const live = fetchMeta(issueNumbers(tasks), runGh);
+  return { meta: { ...committed, ...live }, live: live !== null };
 }
 
-export async function buildDataset(dir, config, { ghCommand = 'gh' } = {}) {
+export async function buildDataset(dir, config, { runGh = ghJson } = {}) {
   const keys = Object.keys(FILES);
   const read = await Promise.all(keys.map((k) => readJsonl(path.join(dir, FILES[k]))));
   const dataset = { label: config.label, frozen: config.frozen, files: {} };
@@ -161,14 +153,14 @@ export async function buildDataset(dir, config, { ghCommand = 'gh' } = {}) {
   });
   const strip = config.stripLessonKeys ?? [];
   dataset.lessons = dataset.lessons.map((row) => omitKeys(row, strip));
-  if (config.meta) dataset.meta = await resolveMeta(dir, dataset.tasks, { ghCommand });
+  if (config.meta) dataset.meta = (await resolveMeta(dir, dataset.tasks, runGh)).meta;
   return dataset;
 }
 
-export async function buildPayload({ root = ROOT, datasets = DATASETS, ghCommand = 'gh' } = {}) {
+export async function buildPayload({ root = ROOT, datasets = DATASETS, runGh = ghJson } = {}) {
   const payload = { generatedAt: new Date().toISOString(), datasets: {} };
   for (const [name, config] of Object.entries(datasets)) {
-    payload.datasets[name] = await buildDataset(path.join(root, config.dir), config, { ghCommand });
+    payload.datasets[name] = await buildDataset(path.join(root, config.dir), config, { runGh });
   }
   return payload;
 }
@@ -183,8 +175,8 @@ async function main(argv) {
   if (argv.includes('--write-meta')) {
     const dir = path.join(ROOT, DATASETS.site.dir);
     const { rows } = await readJsonl(path.join(dir, FILES.tasks));
-    const meta = fetchMeta(issueNumbers(rows));
-    if (!meta) {
+    const { meta, live } = await resolveMeta(dir, rows);
+    if (!live) {
       console.error('build:meta: gh is unavailable or failed; meta.json left unchanged.');
       process.exitCode = 1;
       return;
@@ -200,6 +192,12 @@ async function main(argv) {
       .map(([k, f]) => `${k} ${f.count}${f.skipped ? ` (${f.skipped} skipped)` : ''}`)
       .join(', ');
     console.log(`export-build-data: ${name}: ${counts}`);
+    if (d.meta) {
+      const missing = issueNumbers(d.tasks).filter((n) => !d.meta[n]);
+      if (missing.length) {
+        console.log(`export-build-data: ${name}: no issue meta for #${missing.join(', #')} (run npm run build:meta)`);
+      }
+    }
   }
 }
 

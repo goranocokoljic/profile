@@ -15,14 +15,15 @@ import {
   buildDataset,
   buildPayload,
   fetchMeta,
-  prForIssue,
   readJsonl,
+  resolveMeta,
 } from './export-build-data.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = path.join(ROOT, 'scripts', 'export-build-data.mjs');
-// Never resolves, so every test that reaches gh takes the fallback path.
-const NO_GH = { ghCommand: 'gh-not-installed-for-tests' };
+// gh unavailable: every test that reaches gh takes the fallback path.
+const noGh = () => null;
+const NO_GH = { runGh: noGh };
 
 async function nonEmptyLines(file) {
   try {
@@ -36,10 +37,11 @@ async function readRows(file) {
   return (await nonEmptyLines(file)).map((l) => JSON.parse(l));
 }
 
-// The environment with PATH reduced to node's own directory: no gh.
+// The environment with PATH pointing at an empty directory: no gh. Node itself
+// is spawned by absolute path.
 function envWithoutGh() {
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => k.toUpperCase() !== 'PATH'));
-  env.PATH = path.dirname(process.execPath);
+  env.PATH = emptyBin;
   return env;
 }
 
@@ -55,11 +57,14 @@ function assertDatasetShape(d) {
 }
 
 let tmp;
+let emptyBin;
 before(async () => {
   tmp = await mkdtemp(path.join(tmpdir(), 'export-build-data-'));
+  emptyBin = await mkdtemp(path.join(tmpdir(), 'export-build-data-bin-'));
 });
 after(async () => {
   await rm(tmp, { recursive: true, force: true });
+  await rm(emptyBin, { recursive: true, force: true });
 });
 
 describe('committed datasets', () => {
@@ -157,31 +162,69 @@ describe('edge cases', () => {
   });
 
   test('fetchMeta returns null when gh is unavailable, {} when there is nothing to ask', () => {
-    assert.equal(fetchMeta([1], NO_GH), null);
-    assert.deepEqual(fetchMeta([], NO_GH), {});
+    assert.equal(fetchMeta([1], noGh), null);
+    assert.deepEqual(fetchMeta([], noGh), {});
   });
 });
 
-describe('prForIssue', () => {
-  const prs = [
-    { number: 15, url: 'u15', body: 'Closes #1\n', headRefName: 'feature/issue-1-scaffold', mergedAt: '2026-09-01' },
-    { number: 16, url: 'u16', body: 'Closes #12', headRefName: 'feature/issue-12-x', mergedAt: '2026-09-02' },
-    { number: 17, url: 'u17', body: 'fixes #3', headRefName: 'other', mergedAt: '2026-09-03' },
-    { number: 18, url: 'u18', body: '', headRefName: 'feat/issue-3-retry', mergedAt: '2026-09-05' },
+describe('live gh metadata', () => {
+  const ghIssues = [
+    { number: 1, title: 'One', url: 'https://github.com/o/r/issues/1' },
+    { number: 3, title: 'Three', url: 'https://github.com/o/r/issues/3' },
+    { number: 12, title: 'Twelve', url: 'https://github.com/o/r/issues/12' },
   ];
+  const prs = [
+    { number: 15, url: 'pr15', mergedAt: '2026-09-01T00:00:00Z', closingIssuesReferences: [{ number: 1 }] },
+    { number: 16, url: 'pr16', mergedAt: '2026-09-02T00:00:00Z', closingIssuesReferences: [{ number: 12 }] },
+    { number: 17, url: 'pr17', mergedAt: '2026-09-03T00:00:00Z', closingIssuesReferences: [{ number: 3 }] },
+    { number: 18, url: 'pr18', mergedAt: '2026-09-05T00:00:00Z', closingIssuesReferences: [{ number: 3 }] },
+    { number: 19, url: 'pr19', mergedAt: '2026-09-06T00:00:00Z' },
+  ];
+  // Answers `gh issue list` / `gh pr list` from fixtures; `fail` names a call that fails.
+  const fakeGh = (fail) => (args) => (args[0] === fail ? null : args[0] === 'issue' ? ghIssues : prs);
 
-  test('matches Closes #n without matching a longer number', () => {
-    assert.equal(prForIssue(prs, 1)?.number, 15);
-    assert.equal(prForIssue(prs, 12)?.number, 16);
+  test('builds title, url and the closing PR for each issue', () => {
+    assert.deepEqual(fetchMeta([1, 3, 12], fakeGh()), {
+      1: { title: 'One', url: 'https://github.com/o/r/issues/1', pr: 15, prUrl: 'pr15' },
+      3: { title: 'Three', url: 'https://github.com/o/r/issues/3', pr: 18, prUrl: 'pr18' },
+      12: { title: 'Twelve', url: 'https://github.com/o/r/issues/12', pr: 16, prUrl: 'pr16' },
+    });
   });
 
-  test('matches by branch name and prefers the latest merge', () => {
-    assert.equal(prForIssue(prs, 3)?.number, 18);
+  test('an issue with no closing PR gets null pr, an issue gh does not know is left out', () => {
+    const noPrs = (args) => (args[0] === 'issue' ? ghIssues : []);
+    assert.deepEqual(fetchMeta([1, 99], noPrs), {
+      1: { title: 'One', url: 'https://github.com/o/r/issues/1', pr: null, prUrl: null },
+    });
   });
 
-  test('returns undefined when no PR closed the issue', () => {
-    assert.equal(prForIssue(prs, 2), undefined);
-    assert.equal(prForIssue([{ number: 1, body: null, headRefName: null }], 2), undefined);
+  test('either gh call failing means no live meta', () => {
+    assert.equal(fetchMeta([1], fakeGh('issue')), null);
+    assert.equal(fetchMeta([1], fakeGh('pr')), null);
+  });
+
+  test('resolveMeta lays live meta over the committed file and keeps committed-only issues', async () => {
+    const dir = await mkdtemp(path.join(tmp, 'resolve-'));
+    await writeFile(
+      path.join(dir, 'meta.json'),
+      JSON.stringify({ 1: { title: 'Old', url: 'old', pr: null, prUrl: null }, 5: { title: 'Five', url: 'u5', pr: 2, prUrl: 'p2' } }),
+    );
+    const tasks = [{ issue: 1 }, { issue: 1 }, { issue: '3' }, {}];
+    const asked = [];
+    const { meta, live } = await resolveMeta(dir, tasks, (args) => {
+      asked.push(args[0]);
+      return fakeGh()(args);
+    });
+    assert.equal(live, true);
+    assert.deepEqual(asked, ['issue', 'pr']);
+    assert.deepEqual(meta, {
+      1: { title: 'One', url: 'https://github.com/o/r/issues/1', pr: 15, prUrl: 'pr15' },
+      5: { title: 'Five', url: 'u5', pr: 2, prUrl: 'p2' },
+    });
+    assert.deepEqual(await resolveMeta(dir, tasks, noGh), {
+      meta: { 1: { title: 'Old', url: 'old', pr: null, prUrl: null }, 5: { title: 'Five', url: 'u5', pr: 2, prUrl: 'p2' } },
+      live: false,
+    });
   });
 });
 
