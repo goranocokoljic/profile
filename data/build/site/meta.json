@@ -1,0 +1,50 @@
+{
+  "1": {
+    "title": "Scaffold Astro project with tokens, layout and CI gate",
+    "url": "https://github.com/goranocokoljic/profile/issues/1",
+    "pr": 15,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/15"
+  },
+  "2": {
+    "title": "Typed content layer ported from the reference `content.js`",
+    "url": "https://github.com/goranocokoljic/profile/issues/2",
+    "pr": 16,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/16"
+  },
+  "3": {
+    "title": "Header, hero and footer",
+    "url": "https://github.com/goranocokoljic/profile/issues/3",
+    "pr": 18,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/18"
+  },
+  "4": {
+    "title": "\"Why this role, specifically\" and selected-work index",
+    "url": "https://github.com/goranocokoljic/profile/issues/4",
+    "pr": 19,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/19"
+  },
+  "5": {
+    "title": "Platform engineering section",
+    "url": "https://github.com/goranocokoljic/profile/issues/5",
+    "pr": 20,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/20"
+  },
+  "6": {
+    "title": "AI engineering section (tr-harness and PureContext)",
+    "url": "https://github.com/goranocokoljic/profile/issues/6",
+    "pr": 21,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/21"
+  },
+  "7": {
+    "title": "VisMedic section with optimised archive images",
+    "url": "https://github.com/goranocokoljic/profile/issues/7",
+    "pr": 22,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/22"
+  },
+  "8": {
+    "title": "Background and contact sections",
+    "url": "https://github.com/goranocokoljic/profile/issues/8",
+    "pr": 23,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/23"
+  }
+}

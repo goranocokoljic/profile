@@ -8,11 +8,14 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "node scripts/export-build-data.mjs",
     "build": "astro build",
+    "build:meta": "node scripts/export-build-data.mjs --write-meta",
     "preview": "astro preview",
-    "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\" && npm run test:unit",
+    "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\" && npm run test:unit && npm run test:data",
     "test": "playwright test",
-    "test:unit": "playwright test -c playwright.unit.config.ts"
+    "test:unit": "playwright test -c playwright.unit.config.ts",
+    "test:data": "node --test scripts/export-build-data.test.mjs"
   },
   "dependencies": {
     "astro": "^5.18.2",
