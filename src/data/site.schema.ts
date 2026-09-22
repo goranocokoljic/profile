@@ -162,12 +162,15 @@ const pages = z.strictObject({
   build: z.strictObject({ title: text, heading: text, empty: text }),
 });
 
-// Not in content.js: strings and links the reference writes into index.html.
+// Not in content.js: strings and links the reference writes into index.html,
+// plus text alternatives this site adds for assistive tech.
 const markup = z.strictObject({
   monogram: text,
   homeLabel: text,
   navLabel: text,
   portraitAlt: text,
+  // Visually hidden summary of the platform-evolution diagram.
+  platformDiagramSummary: text,
   // Site-relative file path, e.g. /goran-ocokoljic-cv.pdf.
   cvHref: z.string().regex(/^\/[\w.-]+(\/[\w.-]+)*$/),
 });
