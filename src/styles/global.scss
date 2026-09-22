@@ -109,8 +109,28 @@ a {
   border: 0;
 }
 
+// The reference's base `blockquote` rule: the pull-quote at the end of a
+// section. Older sections still carry a scoped copy.
+.pull-quote {
+  margin: 16px 0 0;
+  padding: 32px 36px;
+  background: var(--surface);
+  border: 1px solid var(--fine);
+  border-left: 3px solid var(--teal);
+  font-family: Georgia, serif;
+  font-size: 25px;
+  line-height: 1.38;
+  font-style: italic;
+  max-width: 1000px;
+}
+
 @media (max-width: $bp-phone) {
   .text-link {
     margin: $space-2xs 0 0;
+  }
+
+  .pull-quote {
+    font-size: 21px;
+    padding: 26px $space-md;
   }
 }

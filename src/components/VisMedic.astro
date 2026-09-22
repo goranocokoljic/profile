@@ -1,0 +1,311 @@
+---
+import { Picture } from 'astro:assets';
+import { site } from '../data/site';
+import consultation from '../assets/vismedic/doctor-consultation.png';
+import booking from '../assets/vismedic/patient-booking.png';
+import calendar from '../assets/vismedic/doctor-calendar.png';
+import award from '../assets/vismedic/ring-award.png';
+
+const { vismedic, markup } = site;
+
+// Rendered widths follow the grid: the container is min(1240px, 100vw - 64px)
+// above 900px and 100vw minus the gutter below; figures have 10px padding and
+// a 1px border. Archive columns are 1.35fr / 0.65fr with a 16px gap.
+const archiveSizes = {
+  main: '(max-width: 900px) calc(100vw - 58px), (max-width: 1304px) calc((100vw - 80px) * 0.675 - 22px), 805px',
+  side: '(max-width: 900px) calc(100vw - 58px), (max-width: 1304px) calc((100vw - 80px) * 0.325 - 22px), 376px',
+};
+const archive = [
+  { image: consultation, copy: markup.vismedicArchive.consultation, main: true },
+  { image: booking, copy: markup.vismedicArchive.booking, main: false },
+  { image: calendar, copy: markup.vismedicArchive.calendar, main: false },
+];
+const picture = { formats: ['webp' as const], fallbackFormat: 'jpg' as const, loading: 'lazy' as const, decoding: 'async' as const };
+---
+
+<section class="vismedic-section" id="vismedic" aria-labelledby="vismedic-title">
+  <div class="container vismedic-opening">
+    <div>
+      <p class="eyebrow">{vismedic.eyebrow}</p>
+      <h2 id="vismedic-title">{vismedic.title}</h2>
+      <p class="vismedic-intro">{vismedic.intro}</p>
+    </div>
+    <dl class="vismedic-meta">
+      {
+        vismedic.meta.map(([label, value]) => (
+          <div>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+
+  <div class="container archive-section">
+    <p class="mini-label">{vismedic.archiveLabel}</p>
+    <div class="archive-grid">
+      {
+        archive.map(({ image, copy, main }) => (
+          <figure class:list={{ 'archive-main': main }}>
+            <Picture
+              {...picture}
+              class="archive-image"
+              src={image}
+              alt={copy.alt}
+              widths={main ? [360, 540, 805, 1080, 1610] : [360, 540, 760, 1080]}
+              sizes={main ? archiveSizes.main : archiveSizes.side}
+            />
+            <figcaption>{copy.caption}</figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="container adoption-grid">
+    <div class="adoption-copy">
+      <h3>{vismedic.realTitle}</h3>
+      <p>{vismedic.realBody}</p>
+      <p class="privacy-line">{vismedic.hipaa}</p>
+      <dl class="recognition-list">
+        {
+          vismedic.recognition.map(([award, result]) => (
+            <div>
+              <dt>{award}</dt>
+              <dd>{result}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+    <figure class="ring-photo">
+      <Picture
+        {...picture}
+        class="ring-image"
+        src={award}
+        alt={markup.vismedicAward.alt}
+        widths={[360, 470, 799]}
+        sizes="(max-width: 900px) calc(100vw - 28px), (max-width: 1304px) calc((100vw - 134px) * 0.4), 468px"
+      />
+      <figcaption>{markup.vismedicAward.caption}</figcaption>
+    </figure>
+  </div>
+
+  <div class="container">
+    <blockquote class="pull-quote vismedic-quote">{vismedic.closing}</blockquote>
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  $section-bg: #fbfbf9;
+  $intro-ink: #495159;
+  $meta-ink: #4a5258;
+  $archive-row: 280px;
+  $archive-figure-narrow: 260px;
+
+  .vismedic-section {
+    padding: $space-3xl 0 95px;
+    background: $section-bg;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  .vismedic-opening {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 70px;
+    align-items: end;
+
+    h2 {
+      font-size: $type-section;
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      margin: 0;
+    }
+  }
+
+  .vismedic-intro {
+    font-size: 18px;
+    line-height: 1.58;
+    color: $intro-ink;
+    max-width: 720px;
+    margin: 30px 0 0;
+  }
+
+  .vismedic-meta,
+  .recognition-list {
+    margin: 0;
+    border-top: 1px solid var(--fine);
+
+    > div {
+      display: grid;
+      border-bottom: 1px solid var(--fine);
+    }
+
+    dd {
+      margin: 0;
+    }
+  }
+
+  .vismedic-meta {
+    > div {
+      grid-template-columns: 120px 1fr;
+      gap: $space-sm;
+      padding: 15px 0;
+    }
+
+    dt {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.11em;
+      color: var(--teal);
+    }
+
+    dd {
+      font-size: 13px;
+      font-weight: 550;
+      color: $meta-ink;
+    }
+  }
+
+  .archive-section {
+    margin-top: 72px;
+  }
+
+  .archive-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 0.65fr;
+    grid-template-rows: $archive-row $archive-row;
+    gap: 16px;
+
+    figure {
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      background: var(--surface);
+      border: 1px solid var(--fine);
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .archive-main {
+      grid-row: 1 / 3;
+    }
+
+    // <Picture> wraps the <img>; the wrapper is the flex item that takes the
+    // space left over by the caption.
+    figure > :global(picture) {
+      display: block;
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
+  .archive-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+  }
+
+  figcaption {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 10px 4px 2px;
+  }
+
+  .adoption-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 70px;
+    padding-top: 74px;
+    align-items: start;
+  }
+
+  .adoption-copy {
+    h3 {
+      font-size: $type-h3;
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      margin: 0 0 $space-sm;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+
+  .privacy-line {
+    padding-left: $space-sm;
+    border-left: 2px solid var(--teal);
+
+    .adoption-copy & {
+      margin-top: 22px;
+    }
+  }
+
+  .recognition-list {
+    margin-top: 36px;
+
+    > div {
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 13px 0;
+    }
+
+    dt {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    dd {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  }
+
+  .ring-photo {
+    margin: 0;
+  }
+
+  .ring-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: cover;
+    object-position: center 30%;
+  }
+
+  .vismedic-quote {
+    margin-top: 64px;
+  }
+
+  @media (max-width: $bp-tablet) {
+    .vismedic-opening,
+    .adoption-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    .archive-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+
+      .archive-main {
+        grid-row: auto;
+      }
+
+      figure {
+        height: $archive-figure-narrow;
+      }
+    }
+  }
+</style>
