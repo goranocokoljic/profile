@@ -128,6 +128,12 @@ export const site = SiteSchema.parse({
       booking:{alt:'VisMedic patient booking and medical documentation screen',caption:'Patient booking and records'},
       calendar:{alt:'VisMedic doctor calendar',caption:'Doctor calendar'}
     },
-    vismedicAward:{alt:'Goran holding the Get in the Ring Serbia award in 2016',caption:'Get in the Ring Serbia · 2016'}
+    vismedicAward:{alt:'Goran holding the Get in the Ring Serbia award in 2016',caption:'Get in the Ring Serbia · 2016'},
+    buildRecord:{
+      label:'BUILD RECORD', latest:'Latest run', pr:'PR',
+      showRuns:'Show the last 5 runs', hideRuns:'Hide the last 5 runs', runsCaption:'The last 5 runs, newest first',
+      columns:{ issue:'Issue', outcome:'Outcome', billed:'Billed' },
+      empty:'No runs recorded yet.'
+    }
   }
 });

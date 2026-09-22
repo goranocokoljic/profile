@@ -175,7 +175,7 @@ test('hero shows its copy, actions and build note', async ({ page }) => {
   await expect(hero.locator('.eyebrow')).toHaveText(site.hero.eyebrow);
   await expect(hero.locator('.hero-support')).toHaveText(site.hero.supporting);
   await expect(hero.getByRole('link', { name: site.hero.primary })).toHaveAttribute('href', '#work');
-  await expect(hero.getByRole('link', { name: site.hero.secondary })).toHaveAttribute('href', '/build');
+  await expect(hero.getByRole('link', { name: site.hero.secondary })).toHaveAttribute('href', '#build-story');
   await expect(hero.getByRole('link', { name: site.hero.cv })).toHaveAttribute('href', site.markup.cvHref);
   await expect(hero.locator('.build-note')).toHaveText(site.hero.buildNote);
 });
@@ -195,10 +195,14 @@ test('the CV link resolves to a file', async ({ request }) => {
   expect(response.status()).toBe(200);
 });
 
-test('the homepage ships no client JS', async ({ page }) => {
-  // Update when the BuildRecord island (the one allowed island) lands.
+test('the homepage ships no client JS but the build-record island', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('script')).toHaveCount(0);
+  await expect(page.locator('astro-island')).toHaveCount(1);
+  // Only Astro's island runtime and its client:visible directive, moved out
+  // of line for the CSP by scripts/externalize-inline.mjs.
+  const srcs = await page.locator('script').evaluateAll((els) => els.map((el) => el.getAttribute('src')));
+  expect(srcs).toHaveLength(2);
+  for (const src of srcs) expect(src).toMatch(/^\/_astro\/inline\.[0-9a-f]{10}\.js$/);
 });
 
 // CLS 0 by construction: the hero reserves its own space, so the portrait
@@ -274,6 +278,7 @@ test('homepage sections sit in order after the hero', async ({ page }) => {
     'platform-section',
     'ai-section',
     'vismedic-section',
+    'build-story',
     'background-section',
     'contact-section',
   ]);
