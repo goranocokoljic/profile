@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = resolve(__dirname, '..', '..');
-export const STORE_PATH = resolve(REPO_ROOT, 'dev-cycle-analytics', 'review-lessons.jsonl');
+export const STORE_PATH = resolve(REPO_ROOT, 'data', 'build', 'site', 'review-lessons.jsonl');
 export const RULES_MD_PATH = resolve(REPO_ROOT, 'dev-docs', 'review-rules.md');
 
 /** Recurrence at which a candidate auto-promotes to the implementer hot path. */

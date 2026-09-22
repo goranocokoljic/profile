@@ -54,14 +54,14 @@
 #
 # KB graduation: after the queue runs to its end (quarantined failures included; an
 # aborted run skips it), the harness reviews the review-KB's *active* lessons
-# (dev-cycle-analytics/review-lessons.jsonl): one headless claude call ranks them with
+# (data/build/site/review-lessons.jsonl): one headless claude call ranks them with
 # an honest graduate/hold recommendation, you pick interactively, and the picks are
 # applied via scripts/kb/graduate.mjs (which regenerates dev-docs/review-rules.md —
 # the cold path loaded into EVERY agent's context). -NoGraduate skips the step;
 # -GraduateOnly runs just this step with no dev-cycle runs.
 #
 # Per-run analytics (separate from the stream-json logs in dev-cycle-logs/) are
-# appended to dev-cycle-analytics/ as JSONL:
+# appended to data/build/site/ as JSONL:
 #   tasks.jsonl          one record per issue run — outcome, total duration,
 #                        per-phase duration/tokens/est-cost, billed total_cost_usd,
 #                        and the nested review-cycle breakdown.
@@ -167,7 +167,7 @@ $FAIL = 'DEVCYCLE_FAIL'
 $logDir = Join-Path $PSScriptRoot 'dev-cycle-logs'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
-$analyticsDir = Join-Path $PSScriptRoot 'dev-cycle-analytics'
+$analyticsDir = Join-Path $PSScriptRoot 'data/build/site'
 New-Item -ItemType Directory -Force -Path $analyticsDir | Out-Null
 $tasksJsonl   = Join-Path $analyticsDir 'tasks.jsonl'
 $cyclesJsonl  = Join-Path $analyticsDir 'review-cycles.jsonl'

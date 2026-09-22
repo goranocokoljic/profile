@@ -783,12 +783,12 @@ though `reviews/issue-{number}-multi-pass-*.md` is there if you want to confirm 
    graduate from the skill.
 4. Commit the updated store so the KB persists:
    ```bash
-   git add dev-cycle-analytics/review-lessons.jsonl
+   git add data/build/site/review-lessons.jsonl
    git commit -m "chore(#{number}): distill review findings into KB" && git push
    ```
    (If this run found zero generalizable findings — a clean review — skip this section.)
 
-See `dev-cycle-analytics/REVIEW_KB.md` for the full lifecycle.
+See `data/build/site/REVIEW_KB.md` for the full lifecycle.
 
 **Then tell the user:**
 - Issue number and title

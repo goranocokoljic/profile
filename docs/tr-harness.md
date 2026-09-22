@@ -209,7 +209,7 @@ rather fail fast than have the run sit idle waiting for a reset.
 Raw `claude` stream-json, one file per attempt: `issue-<n>-<timestamp>.log`. The
 full record of everything the model did. Gitignored.
 
-### Analytics — `dev-cycle-analytics/` (JSONL, gitignored)
+### Analytics — `data/build/site/` (JSONL, committed)
 Written once per attempt, separate from the stream logs, for analysis.
 
 **`tasks.jsonl`** — one record per issue run:
@@ -257,18 +257,18 @@ phase's/cycle's share of output tokens. Treat it as a proportion, not a bill.
 
 ```powershell
 # Average billed cost and duration per successful issue
-Get-Content dev-cycle-analytics/tasks.jsonl |
+Get-Content data/build/site/tasks.jsonl |
   ForEach-Object { $_ | ConvertFrom-Json } |
   Where-Object outcome -eq 'ok' |
   Measure-Object billed_cost_usd, total_sec -Average
 
 # Findings totals per review cycle
-Get-Content dev-cycle-analytics/review-cycles.jsonl |
+Get-Content data/build/site/review-cycles.jsonl |
   ForEach-Object { $_ | ConvertFrom-Json } |
   Select-Object issue, review_cycle, @{n='blockers';e={$_.findings.blocker}}, review_sec, fix_sec
 
 # Reviewer false-positive rate (rejected findings / all adjudicated findings)
-$d = Get-Content dev-cycle-analytics/review-cycles.jsonl |
+$d = Get-Content data/build/site/review-cycles.jsonl |
   ForEach-Object { ($_ | ConvertFrom-Json).dispositions } | Where-Object { $_ }
 $rej = ($d | ForEach-Object { $_.rejected_intentional + $_.rejected_wrong } | Measure-Object -Sum).Sum
 $tot = ($d | ForEach-Object { $_.fixed + $_.rejected_intentional + $_.rejected_wrong + $_.deferred } | Measure-Object -Sum).Sum
@@ -278,7 +278,7 @@ $tot = ($d | ForEach-Object { $_.fixed + $_.rejected_intentional + $_.rejected_w
 With `jq`:
 
 ```bash
-jq -c 'select(.outcome=="ok") | {issue, total_sec, billed_cost_usd}' dev-cycle-analytics/tasks.jsonl
+jq -c 'select(.outcome=="ok") | {issue, total_sec, billed_cost_usd}' data/build/site/tasks.jsonl
 
 # Reviewer false-positive rate (rejected findings / all adjudicated findings) —
 # the signal for whether context-blind reviewers need more author context:
@@ -286,7 +286,7 @@ jq -s '[.[] | .dispositions | select(.)] |
   { rejected: (map(.rejected_intentional + .rejected_wrong) | add),
     total:    (map(.fixed + .rejected_intentional + .rejected_wrong + .deferred) | add) } |
   . + { rate: (if .total > 0 then (.rejected / .total * 100 | round) else null end) }' \
-  dev-cycle-analytics/review-cycles.jsonl
+  data/build/site/review-cycles.jsonl
 ```
 
 ---
@@ -307,7 +307,7 @@ which is the one case where a fresh resume beats grinding on.
 
 After the queue runs to its end (including with quarantined failures — only an
 aborted run skips it), the harness runs a graduation review of the review knowledge
-base (`dev-cycle-analytics/review-lessons.jsonl`). Skip it with `-NoGraduate`; run
+base (`data/build/site/review-lessons.jsonl`). Skip it with `-NoGraduate`; run
 it on its own with `-GraduateOnly`.
 
 **Why:** *active* lessons (recurred in ≥2 issues) are injected only into the

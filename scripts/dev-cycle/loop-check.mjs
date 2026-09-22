@@ -4,7 +4,7 @@
 // Detects the "fix-of-fix loop" signature: a run of review-spawned follow-up
 // issues whose reviews keep finding more, with rising cost and a single
 // churning hotspot file. All signals are computed from data the harness
-// already records (dev-cycle-analytics/tasks.jsonl) plus `gh` / `git`, both
+// already records (data/build/site/tasks.jsonl) plus `gh` / `git`, both
 // optional — an unavailable source skips its signals rather than failing.
 //
 // Exit codes: 0 = ok, 1 = warn (log it, keep going), 2 = stop (halt the queue).
@@ -39,7 +39,7 @@ const median = (a) => {
 };
 
 // ---- load tasks.jsonl, collapse attempts to one record per issue ----------
-const tasksFile = path.join(repoRoot, 'dev-cycle-analytics', 'tasks.jsonl');
+const tasksFile = path.join(repoRoot, 'data', 'build', 'site', 'tasks.jsonl');
 const byIssue = new Map();
 if (fs.existsSync(tasksFile)) {
   for (const line of fs.readFileSync(tasksFile, 'utf8').replace(/^﻿/, '').split(/\r?\n/)) {

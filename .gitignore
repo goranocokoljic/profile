@@ -12,9 +12,6 @@ public/build/data.json
 # tr-harness stream logs — full transcripts, never committed
 dev-cycle-logs/
 
-# tr-harness working files (the committed analytics live in data/build/site/)
-dev-cycle-analytics/
-!data/build/**
 
 # Playwright
 test-results/
