@@ -5,24 +5,69 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
+import { fmtDur, fmtUsd } from '../build/format';
+import type { Payload } from '../build/types';
 import '../styles/dashboard.scss';
 
 const { build } = site.pages;
 
 // Written by the prebuild exporter. Embedded in the page rather than fetched:
-// the dashboard makes no runtime requests. `<` is JSON-escaped so recorded
-// text such as "<style>" never reads as markup in the attribute.
-const payload = readFileSync(join(process.cwd(), 'public/build/data.json'), 'utf8').replace(/</g, '\\u003c');
+// the dashboard makes no runtime requests. Read as text, not imported, so the
+// checker does not infer a type for 600 KB of JSON. `<` is JSON-escaped so
+// recorded text such as "</script>" cannot close the data block.
+const raw = readFileSync(join(process.cwd(), 'public/build/data.json'), 'utf8');
+const payload = JSON.parse(raw) as Payload;
+const payloadJson = raw.replace(/</g, '\\u003c');
 const copy = JSON.stringify({ datasetLabel: build.datasetLabel, datasets: build.datasets, empty: build.empty });
+
+// The <noscript> table: the site dataset's runs, newest first, as the
+// dashboard's runs table orders them by default.
+const { tasks, meta } = payload.datasets.site;
+const runs = [...tasks].sort((a, b) => b.ts.localeCompare(a.ts));
+const cols = build.noscript.columns;
 ---
 
 <Base title={build.title}>
   <Header />
   <main class="container">
-    <h1>{build.heading}</h1>
-    <div id="dashboard" data-dataset="site" data-copy={copy} data-payload={payload}></div>
+    <header class="build-intro">
+      <p class="eyebrow">{build.eyebrow}</p>
+      <h1 class="section-title">{build.heading}</h1>
+      {build.intro.map((p) => <p>{p}</p>)}
+    </header>
+    <div id="dashboard" data-dataset="site" data-copy={copy}></div>
+    <noscript>
+      {
+        runs.length ? (
+          <table class="noscript-runs">
+            <caption>{build.noscript.caption}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{cols.issue}</th>
+                <th scope="col">{cols.outcome}</th>
+                <th scope="col">{cols.duration}</th>
+                <th scope="col">{cols.billed}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map((t) => (
+                <tr>
+                  <td>{meta?.[String(t.issue)] ? <a href={meta[String(t.issue)].url}>#{t.issue}</a> : `#${t.issue}`}</td>
+                  <td>{t.outcome}</td>
+                  <td>{fmtDur(t.total_sec)}</td>
+                  <td>{fmtUsd(t.billed_cost_usd)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p class="noscript-runs">{build.empty}</p>
+        )
+      }
+    </noscript>
   </main>
   <Footer />
+  <script is:inline type="application/json" id="build-data" set:html={payloadJson} />
 </Base>
 
 <script>
@@ -30,11 +75,62 @@ const copy = JSON.stringify({ datasetLabel: build.datasetLabel, datasets: build.
   import type { Payload } from '../build/types';
 
   const root = document.getElementById('dashboard');
-  if (root?.dataset.payload && root.dataset.copy) {
-    const payload = JSON.parse(root.dataset.payload) as Payload;
+  const data = document.getElementById('build-data');
+  if (root?.dataset.copy && data?.textContent) {
+    const payload = JSON.parse(data.textContent) as Payload;
     const copy = JSON.parse(root.dataset.copy) as DashboardCopy;
-    // The payload is parsed; drop the 600 KB attribute from the live DOM.
-    root.removeAttribute('data-payload');
+    // The payload is parsed; drop the 600 KB text node from the live DOM.
+    data.remove();
     renderDashboard(root, payload, { dataset: root.dataset.dataset ?? 'site', copy });
   }
 </script>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  .build-intro {
+    padding: $space-2xl 0 $space-lg;
+    border-bottom: 1px solid var(--fine);
+
+    p:not(.eyebrow) {
+      max-width: 760px;
+      margin: $space-md 0 0;
+      font-size: $type-body;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    h1 + p {
+      margin-top: $space-lg;
+    }
+  }
+
+  .noscript-runs {
+    margin: $space-lg 0 $space-xl;
+    font-size: $type-small;
+    border-collapse: collapse;
+
+    caption {
+      text-align: left;
+      color: var(--muted);
+      padding-bottom: $space-xs;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: $space-2xs $space-md $space-2xs 0;
+      border-bottom: 1px solid var(--fine);
+    }
+
+    td:nth-child(n + 3) {
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  @media (max-width: $bp-tablet) {
+    .build-intro {
+      padding-top: $space-xl;
+    }
+  }
+</style>

@@ -164,7 +164,16 @@ const pages = z.strictObject({
   home: z.strictObject({ title: text }),
   build: z.strictObject({
     title: text,
+    eyebrow: text,
     heading: text,
+    // The intro above the dashboard: what tr-harness is and the issue→merge
+    // loop; then what is real vs estimated and where the second dataset is from.
+    intro: z.tuple([text, text]),
+    // The <noscript> fallback: the site dataset's runs as a plain table.
+    noscript: z.strictObject({
+      caption: text,
+      columns: z.strictObject({ issue: text, outcome: text, duration: text, billed: text }),
+    }),
     // Build-record dashboard: the empty state and the dataset switch.
     empty: text,
     datasetLabel: text,

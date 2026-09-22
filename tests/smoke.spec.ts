@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { site } from '../src/data/site';
+import { fmtDur, fmtUsd } from '../src/build/format';
+import type { Payload } from '../src/build/types';
 
 for (const path of ['/', '/build']) {
   test(`${path} renders with one h1 and no console errors`, async ({ page }) => {
@@ -18,10 +21,70 @@ for (const path of ['/', '/build']) {
   });
 }
 
-test('/build shows the heading and the build-record dashboard', async ({ page }) => {
+test('/build shows the intro and the build-record dashboard', async ({ page }) => {
+  const { build } = site.pages;
   await page.goto('/build');
-  await expect(page.locator('h1')).toHaveText(site.pages.build.heading);
+  await expect(page).toHaveTitle(build.title);
+  const intro = page.locator('main .build-intro');
+  await expect(intro.locator('.eyebrow')).toHaveText(build.eyebrow);
+  await expect(page.locator('h1')).toHaveCount(1);
+  await expect(intro.locator('h1')).toHaveText(build.heading);
+  await expect(intro.locator('p:not(.eyebrow)')).toHaveText([...build.intro]);
   await expect(page.locator('#dashboard .kpis .tile')).toHaveCount(6);
+  // The intro sits between the header and the dashboard.
+  const order = await page.locator('body > header, .build-intro, #dashboard, body > footer').evaluateAll((els) =>
+    els.map((el) => el.id || el.className || el.tagName.toLowerCase()),
+  );
+  expect(order.map((o) => o.split(' ')[0])).toEqual(['site-header', 'build-intro', 'dashboard', 'site-footer']);
+});
+
+for (const [width, pad] of [[1440, '84px'], [390, '58px']] as const) {
+  test(`/build intro uses the site type scale at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/build');
+    const intro = page.locator('.build-intro');
+    await expect(intro).toHaveCSS('padding-top', pad);
+    await expect(intro.locator('.eyebrow')).toHaveCSS('font-size', '12px');
+    await expect(intro.locator('.eyebrow')).toHaveCSS('text-transform', 'uppercase');
+    await expect(intro.locator('h1')).toHaveCSS('font-size', width === 1440 ? '67.68px' : '46px');
+    await expect(intro.locator('p:not(.eyebrow)').first()).toHaveCSS('font-size', '17px');
+  });
+}
+
+test('/build toggle switches the runs count to the toprope dataset', async ({ page }) => {
+  const { build } = site.pages;
+  await page.goto('/build');
+  const toggle = page.getByRole('group', { name: build.datasetLabel });
+  await expect(toggle).toBeVisible();
+  const runs = page.locator('#dashboard .kpis .value').first();
+  const before = await runs.innerText();
+  await toggle.getByRole('button', { name: build.datasets.toprope }).click();
+  await expect(runs).toHaveText('172');
+  expect(before).not.toBe('172');
+});
+
+test.describe('/build without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('shows the intro and a table of the site runs', async ({ page }) => {
+    const { build } = site.pages;
+    const { tasks, meta } = (JSON.parse(readFileSync('dist/build/data.json', 'utf8')) as Payload).datasets.site;
+    await page.goto('/build');
+    await expect(page.locator('h1')).toHaveText(build.heading);
+    await expect(page.locator('.build-intro p:not(.eyebrow)')).toHaveText([...build.intro]);
+    await expect(page.locator('#dashboard')).toBeEmpty();
+    const table = page.locator('table.noscript-runs');
+    await expect(table).toBeVisible();
+    await expect(table.locator('caption')).toHaveText(build.noscript.caption);
+    const c = build.noscript.columns;
+    await expect(table.locator('thead th')).toHaveText([c.issue, c.outcome, c.duration, c.billed]);
+    await expect(table.locator('tbody tr')).toHaveCount(tasks.length);
+    const newest = [...tasks].sort((a, b) => b.ts.localeCompare(a.ts))[0];
+    const first = table.locator('tbody tr').first().locator('td');
+    await expect(first).toHaveText([`#${newest.issue}`, newest.outcome, fmtDur(newest.total_sec), fmtUsd(newest.billed_cost_usd)]);
+    const url = meta?.[String(newest.issue)]?.url;
+    if (url) await expect(first.first().getByRole('link')).toHaveAttribute('href', url);
+  });
 });
 
 test('viewport allows safe-area layout', async ({ page }) => {
@@ -112,7 +175,7 @@ test('hero shows its copy, actions and build note', async ({ page }) => {
   await expect(hero.locator('.eyebrow')).toHaveText(site.hero.eyebrow);
   await expect(hero.locator('.hero-support')).toHaveText(site.hero.supporting);
   await expect(hero.getByRole('link', { name: site.hero.primary })).toHaveAttribute('href', '#work');
-  await expect(hero.getByRole('link', { name: site.hero.secondary })).toHaveAttribute('href', '#build');
+  await expect(hero.getByRole('link', { name: site.hero.secondary })).toHaveAttribute('href', '/build');
   await expect(hero.getByRole('link', { name: site.hero.cv })).toHaveAttribute('href', site.markup.cvHref);
   await expect(hero.locator('.build-note')).toHaveText(site.hero.buildNote);
 });

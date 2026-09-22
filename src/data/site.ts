@@ -102,7 +102,12 @@ export const site = SiteSchema.parse({
   pages: {
     home: { title:'Goran Ocokoljić — Lead Web Engineer' },
     build: {
-      title:'Build record — Goran Ocokoljić', heading:'Build record',
+      title:'Build record — Goran Ocokoljić', eyebrow:'HOW THIS SITE WAS BUILT', heading:'Build record',
+      intro:[
+        'tr-harness is the autonomous development harness I designed. It takes one GitHub issue per run: it reads the issue, implements it on a branch, runs the build and tests, opens a pull request, answers independent code review for up to three cycles and merges. Every run on this repository is recorded below.',
+        'Durations, review cycles and findings are measured. Billed cost per run is the amount billed. Cost per phase is an estimate, split by output tokens. The second dataset is a frozen record of tr-harness building Toprope, another project, and does not change.'
+      ],
+      noscript:{ caption:'Runs on this site. Turn on JavaScript for the charts and the Toprope dataset.', columns:{ issue:'Issue', outcome:'Outcome', duration:'Duration', billed:'Billed' } },
       empty:'No runs recorded yet — the first tr-harness run on this repository will appear here.',
       datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' }
     }
