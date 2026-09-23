@@ -327,9 +327,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/build');
     await dash(page).locator('button.expander').first().click();
     await dash(page).getByRole('button', { name: 'table' }).first().click();
-    // The intro eyebrow is excluded: the reference --teal (#0D8075) on --bg is
-    // 4.49:1, a site-wide token issue the hero eyebrow shares (see ai.spec.ts).
-    const results = await new AxeBuilder({ page }).include('main').exclude('.build-intro .eyebrow').analyze();
+    const results = await new AxeBuilder({ page }).include('main').analyze();
     const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
     expect(bad.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
   });

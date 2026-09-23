@@ -70,7 +70,7 @@ a {
 // their own overrides.
 .eyebrow {
   font-family: var(--mono);
-  color: var(--teal);
+  color: var(--teal-text);
   font-size: $type-label;
   letter-spacing: 0.18em;
   font-weight: 700;
@@ -82,7 +82,7 @@ a {
   font-family: var(--mono);
   font-size: $type-micro;
   letter-spacing: 0.17em;
-  color: var(--teal);
+  color: var(--teal-text);
   font-weight: 700;
   text-transform: uppercase;
   margin: 0 0 $space-xs;
@@ -95,7 +95,9 @@ a {
 }
 
 .text-link {
-  color: var(--teal);
+  @include touch-target;
+
+  color: var(--teal-text);
   font-weight: 650;
   margin-left: 4px;
   text-decoration: underline;

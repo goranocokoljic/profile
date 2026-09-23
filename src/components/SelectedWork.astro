@@ -44,6 +44,10 @@ const { selected } = site;
   }
 
   .selected-link {
+    // The links sit 41px apart, so an overlay would overlap the next one:
+    // on touch screens they grow instead.
+    @include touch-size;
+
     display: grid;
     grid-template-columns: auto 1fr auto;
     gap: 16px;
@@ -54,7 +58,7 @@ const { selected } = site;
     &:hover,
     &:focus-visible {
       border-color: var(--teal);
-      color: var(--teal);
+      color: var(--teal-text);
     }
 
     strong {
@@ -64,7 +68,7 @@ const { selected } = site;
 
   .selected-number {
     font-family: var(--mono);
-    color: var(--teal);
+    color: var(--teal-text);
     font-size: 13px;
   }
 

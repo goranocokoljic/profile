@@ -1,7 +1,7 @@
 // The numbers behind every view, split out of the reference script's render
 // functions so they can be unit-tested against the reference. Pure: no DOM.
 
-import { dayKey, median } from './format';
+import { dayKey, median } from './format.ts';
 import type { Epic, Findings, PhaseName, Task } from './types';
 
 export type Period = 'all' | '90' | '30' | '7';

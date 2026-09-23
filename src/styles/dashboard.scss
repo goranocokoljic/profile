@@ -78,6 +78,8 @@
   }
 
   button {
+    @include touch-size;
+
     font: inherit;
     color: var(--text-primary);
     background: var(--surface-1);

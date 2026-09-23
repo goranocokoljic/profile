@@ -48,16 +48,21 @@ const links = [
     color: #2a3138;
   }
 
+  .desktop-nav a,
+  .header-cv {
+    @include touch-target;
+  }
+
   .header-cv {
     justify-self: end;
-    color: var(--teal);
+    color: var(--teal-text);
     font-size: $type-small;
     font-weight: 650;
   }
 
   .desktop-nav a:hover,
   .header-cv:hover {
-    color: var(--teal);
+    color: var(--teal-text);
   }
 
   @media (max-width: $bp-tablet) {

@@ -18,13 +18,15 @@ const { markup } = site;
   @use '../styles/tokens' as *;
 
   .monogram {
+    @include touch-target;
+
     justify-self: start;
     font-weight: 800;
     font-size: $type-h3;
     letter-spacing: -0.065em;
 
     span {
-      color: var(--teal);
+      color: var(--teal-text);
     }
   }
 

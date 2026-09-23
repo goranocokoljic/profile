@@ -46,5 +46,35 @@
     "url": "https://github.com/goranocokoljic/profile/issues/8",
     "pr": 23,
     "prUrl": "https://github.com/goranocokoljic/profile/pull/23"
+  },
+  "9": {
+    "title": "Build-record data: exporter, payload schema and frozen snapshot",
+    "url": "https://github.com/goranocokoljic/profile/issues/9",
+    "pr": 24,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/24"
+  },
+  "10": {
+    "title": "Port the dashboard renderer with a dataset toggle",
+    "url": "https://github.com/goranocokoljic/profile/issues/10",
+    "pr": 25,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/25"
+  },
+  "11": {
+    "title": "`/build` page",
+    "url": "https://github.com/goranocokoljic/profile/issues/11",
+    "pr": 26,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/26"
+  },
+  "12": {
+    "title": "Homepage build-record card (React island)",
+    "url": "https://github.com/goranocokoljic/profile/issues/12",
+    "pr": 27,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/27"
+  },
+  "13": {
+    "title": "`record-run` script and telemetry commit contract",
+    "url": "https://github.com/goranocokoljic/profile/issues/13",
+    "pr": 29,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/29"
   }
 }

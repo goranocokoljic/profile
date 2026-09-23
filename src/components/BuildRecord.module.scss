@@ -48,7 +48,7 @@
   margin: $space-md 0 0;
 
   a {
-    color: var(--teal);
+    color: var(--teal-text);
     text-decoration: underline;
     text-underline-offset: 4px;
   }
@@ -60,12 +60,14 @@
 }
 
 .toggle {
+  @include touch-size;
+
   display: block;
   margin: $space-xs 0 0;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--teal);
+  color: var(--teal-text);
   font: inherit;
   font-size: 13px;
   font-weight: 650;

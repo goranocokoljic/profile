@@ -16,6 +16,11 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The Playwright image the Linux visual baselines are rendered in
+    # (npm run test:baselines:linux), so CI compares like with like. Keep the
+    # tag equal to the installed @playwright/test version.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,5 +30,4 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
       - run: npm run test

@@ -121,7 +121,9 @@ export function dataTable(cols: Col[], rows: Cell[][]): HTMLElement {
     rows.map((r) => h('tr', null, r.map((cell, i) => h('td', { class: cls(cols[i]) }, cell)))),
   );
   // Wide tables scroll inside their card rather than widening the page at 390px.
-  return h('div', { class: 'scroll-x' }, h('table', { class: 'data' }, thead, tbody));
+  // The table holds nothing focusable, so the scroller itself takes focus:
+  // keyboard users can then scroll it with the arrow keys.
+  return h('div', { class: 'scroll-x', tabindex: '0' }, h('table', { class: 'data' }, thead, tbody));
 }
 
 function chartWidth(container: HTMLElement): number {
