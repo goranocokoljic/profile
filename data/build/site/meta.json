@@ -88,5 +88,29 @@
     "url": "https://github.com/goranocokoljic/profile/issues/30",
     "pr": 32,
     "prUrl": "https://github.com/goranocokoljic/profile/pull/32"
+  },
+  "33": {
+    "title": "Build record: findings by severity, honest trend wording, number alignment",
+    "url": "https://github.com/goranocokoljic/profile/issues/33",
+    "pr": 36,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/36"
+  },
+  "34": {
+    "title": "Copy and typography: balanced hero, one framework mention, drop the AI flow list",
+    "url": "https://github.com/goranocokoljic/profile/issues/34",
+    "pr": 37,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/37"
+  },
+  "35": {
+    "title": "/build: technical decisions for this site",
+    "url": "https://github.com/goranocokoljic/profile/issues/35",
+    "pr": 38,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/38"
+  },
+  "39": {
+    "title": "Build record: drop the 'fixed before merge' line; disposition coverage is partial",
+    "url": "https://github.com/goranocokoljic/profile/issues/39",
+    "pr": 40,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/40"
   }
 }
