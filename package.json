@@ -15,6 +15,7 @@
     "preview": "astro preview",
     "check": "astro check && tsc --noEmit && eslint . && stylelint \"src/**/*.scss\" && npm run test:unit && npm run test:data",
     "test": "playwright test",
+    "test:baselines:linux": "node scripts/linux-baselines.mjs",
     "test:unit": "playwright test -c playwright.unit.config.ts",
     "test:data": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/export-build-data.test.mjs scripts/externalize-inline.test.mjs scripts/record-run.test.mjs scripts/readme-run-table.test.mjs"
   },

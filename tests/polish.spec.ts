@@ -49,18 +49,21 @@ for (const path of PAGES) {
   }
 }
 
-// Visual baselines. Screenshots differ between operating systems (font
-// rasterising; Inter is not installed on the Linux CI runner), so the
-// committed baselines are the Windows ones and only Windows compares them.
-// On other platforms these tests are reported as skipped, not passed; the
-// layout checks above run everywhere.
+// Visual baselines, one set per platform. Screenshots differ between
+// operating systems (font rasterising; Inter is not installed on Linux), so
+// there are two committed sets: Windows (where tr-harness runs the gate) and
+// Linux, rendered in the Playwright container that CI also runs in
+// (.github/workflows/ci.yml). Refresh the Linux set with
+// `npm run test:baselines:linux`. Other platforms report the tests as skipped.
 //
 // The homepage is light only (color-scheme: light; the reference defines no
-// dark palette), so it has light baselines only. The build-record island is
-// masked: its numbers change with every harness run. /build is shot on the
-// frozen Toprope dataset, so the whole dashboard, light and dark, is under
-// the baseline; only the "data updated" time (file mtime) is masked.
-const comparesScreenshots = process.platform === 'win32';
+// dark palette), so it has light baselines only. It is shot above and below
+// the build-story section: the build-record card shows the latest run, so its
+// height changes with every harness run and would move everything below it.
+// /build is shot on the frozen Toprope dataset, so the whole dashboard, light
+// and dark, is under the baseline; only the "data updated" time (file mtime)
+// is masked.
+const comparesScreenshots = ['win32', 'linux'].includes(process.platform);
 const SHOTS = [
   ...WIDTHS.map((width) => ({ path: '/', scheme: 'light' as const, width })),
   ...SCHEMES.flatMap((scheme) => WIDTHS.map((width) => ({ path: '/build', scheme, width }))),
@@ -68,17 +71,25 @@ const SHOTS = [
 
 for (const { path, scheme, width } of SHOTS) {
   test(`${path} (${scheme}) at ${width}px matches its baseline`, async ({ page }) => {
-    test.skip(!comparesScreenshots, 'baselines are Windows renders; see the comment above');
+    test.skip(!comparesScreenshots, 'baselines exist for Windows and Linux only; see the comment above');
     await page.emulateMedia({ colorScheme: scheme });
     await page.setViewportSize({ width, height: 900 });
-    const name = `${slug(path)}-${scheme}-${width}.png`;
+    const name = `${slug(path)}-${scheme}-${width}`;
     if (path === '/') {
       await page.goto('/');
-      await expect(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('astro-island')] });
+      const { top, bottom, height } = await page.locator('#build-story').evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { top: r.top + scrollY, bottom: r.bottom + scrollY, height: document.documentElement.scrollHeight };
+      });
+      await expect(page).toHaveScreenshot(`${name}-above.png`, { fullPage: true, clip: { x: 0, y: 0, width, height: top } });
+      await expect(page).toHaveScreenshot(`${name}-below.png`, {
+        fullPage: true,
+        clip: { x: 0, y: bottom, width, height: height - bottom },
+      });
     } else {
       await page.goto('/build#dataset=toprope');
       await expect(page.locator('#dashboard .kpis .value').first()).toHaveText('172');
-      await expect(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('#dashboard .asof')] });
+      await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, mask: [page.locator('#dashboard .asof')] });
     }
   });
 }
@@ -251,3 +262,9 @@ for (const dpr of [1.25, 1.5]) {
     }
   });
 }
+
+test('CI runs in the Playwright image the Linux baselines are rendered in', () => {
+  const { version } = JSON.parse(readFileSync('node_modules/@playwright/test/package.json', 'utf8')) as { version: string };
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  expect(ci).toMatch(new RegExp(`image: mcr\.microsoft\.com/playwright:v${version.replace(/\./g, '\.')}-noble`));
+});

@@ -12,13 +12,13 @@ Five recent runs (latest attempt per issue), rendered from
 every row against that file; `/build` always has the full, current record.
 
 <!-- run-table:start -->
-| Issue | Outcome | Review cycles | Findings | Billed | Wall time |
-| --- | --- | ---: | ---: | ---: | ---: |
-| [#13 `record-run` script and telemetry commit contract](https://github.com/goranocokoljic/profile/issues/13) | ok | 1 | 27 | $6.65 | 15m |
-| [#12 Homepage build-record card (React island)](https://github.com/goranocokoljic/profile/issues/12) | ok | 1 | 44 | $10.50 | 33m |
-| [#11 `/build` page](https://github.com/goranocokoljic/profile/issues/11) | ok | 1 | 22 | $3.71 | 8m |
-| [#10 Port the dashboard renderer with a dataset toggle](https://github.com/goranocokoljic/profile/issues/10) | ok | 1 | 33 | $8.93 | 23m |
-| [#9 Build-record data: exporter, payload schema and frozen snapshot](https://github.com/goranocokoljic/profile/issues/9) | ok | 1 | 26 | $6.29 | 12m |
+| Issue | Attempt | Outcome | Review cycles | Findings | Billed | Wall time |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| [#13 `record-run` script and telemetry commit contract](https://github.com/goranocokoljic/profile/issues/13) | 1 | ok | 1 | 27 | $6.65 | 15m |
+| [#12 Homepage build-record card (React island)](https://github.com/goranocokoljic/profile/issues/12) | 1 | ok | 1 | 44 | $10.50 | 33m |
+| [#11 `/build` page](https://github.com/goranocokoljic/profile/issues/11) | 1 | ok | 1 | 22 | $3.71 | 8m |
+| [#10 Port the dashboard renderer with a dataset toggle](https://github.com/goranocokoljic/profile/issues/10) | 1 | ok | 1 | 33 | $8.93 | 23m |
+| [#9 Build-record data: exporter, payload schema and frozen snapshot](https://github.com/goranocokoljic/profile/issues/9) | 1 | ok | 1 | 26 | $6.29 | 12m |
 <!-- run-table:end -->
 
 - Build record: [`/build`](https://go-profile.goran-ocokoljic.workers.dev/build) —
