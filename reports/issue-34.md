@@ -42,4 +42,4 @@
 - Hero last line → `tests/copy.spec.ts` "at {1280,1440,1680}px no hero headline line ends on a single word". It measures DOM ranges and checks the word total. It fails when `text-wrap: wrap` is forced (checked by hand).
 - Visual criterion → baselines on develop matched at 390/1024/1440 (768 "below" was already 1px off). After the change, a row-by-row diff of old and new "above" shots: the first changes are in the hero, the next in `.ai-dev-grid`. Role-fit, work, platform and the AI intro have no changes. Below the removed list there are only thin anti-aliasing bands from a sub-pixel shift. The same shift rewrote three "below" shots (±1px height).
 - Coverage: the repo has no `test:coverage` script, so line coverage was not measured.
-- Note: the PR was merged while the CI `gate` check was still pending. The local gate was green.
+- CI: the PR was merged while its `gate` check was pending. CI on develop after the merge (run 35917402823) is green: 189 tests, including the Linux baselines. The develop run before this change (#33) was red on the 1024px homepage baseline; the refreshed baselines fix that.
