@@ -59,7 +59,7 @@ test('the /build script makes no requests, never polls and is under 60 KB gzippe
 // anywhere in the build output.
 test('"never the hard part" does not appear anywhere in dist/', () => {
   const text = /\.(html|js|mjs|css|json|txt|xml|svg|webmanifest)$/i;
-  const files = (readdirSync('dist', { recursive: true }) as string[]).filter((f) => text.test(f));
+  const files = readdirSync('dist', { recursive: true, encoding: 'utf8' }).filter((f) => text.test(f));
   expect(files).toContain('index.html');
   for (const f of files) expect(readFileSync(join('dist', f), 'utf8'), f).not.toMatch(/never the hard part/i);
 });
