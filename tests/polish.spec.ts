@@ -266,5 +266,5 @@ for (const dpr of [1.25, 1.5]) {
 test('CI runs in the Playwright image the Linux baselines are rendered in', () => {
   const { version } = JSON.parse(readFileSync('node_modules/@playwright/test/package.json', 'utf8')) as { version: string };
   const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
-  expect(ci).toMatch(new RegExp(`image: mcr\.microsoft\.com/playwright:v${version.replace(/\./g, '\.')}-noble`));
+  expect(ci).toContain(`image: mcr.microsoft.com/playwright:v${version}-noble`);
 });

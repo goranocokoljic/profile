@@ -8,6 +8,7 @@
 import { fmtDur, fmtUsd } from './format.ts';
 import { findingsSum } from './stats.ts';
 import type { Dataset, Task } from './types.ts';
+import { pickTask, taskTime } from '../../scripts/pick-task.mjs';
 
 export const BLOCK_START = '<!-- run-table:start -->';
 export const BLOCK_END = '<!-- run-table:end -->';
@@ -21,21 +22,14 @@ export interface RunKey {
   attempt: number;
 }
 
-const byInstantDesc = (a: Task, b: Task) => Date.parse(b.ts) - Date.parse(a.ts);
-
 /**
- * The latest attempt per issue, newest run first. A re-recorded attempt
- * resolves to its newest record, the same rule as record-run's pickTask.
+ * The latest attempt per issue, newest run first. Each issue's record is
+ * chosen by pickTask, the rule the telemetry commit uses, so the README and
+ * the commit always name the same record.
  */
 export function latestAttempts(tasks: readonly Task[]): Task[] {
-  const byIssue = new Map<number, Task>();
-  for (const t of tasks) {
-    const seen = byIssue.get(t.issue);
-    if (!seen || t.attempt > seen.attempt || (t.attempt === seen.attempt && byInstantDesc(t, seen) < 0)) {
-      byIssue.set(t.issue, t);
-    }
-  }
-  return [...byIssue.values()].sort(byInstantDesc);
+  const issues = [...new Set(tasks.map((t) => t.issue))];
+  return issues.map((issue) => pickTask(tasks, issue)!).sort((a, b) => taskTime(b) - taskTime(a));
 }
 
 // A title may hold `|` (splits the cell) or `[` `]` (breaks the link label).
@@ -53,7 +47,7 @@ function issueCell(t: Task, meta: Dataset['meta']): string {
  */
 export function renderRunTable(tasks: readonly Task[], meta: Dataset['meta'], runs: readonly RunKey[]): string {
   const rows = runs.map(({ issue, attempt }) => {
-    const t = latestAttempts(tasks.filter((r) => r.issue === issue && r.attempt === attempt))[0];
+    const t = pickTask(tasks, issue, attempt);
     if (!t) throw new Error(`no task record for issue #${issue} attempt ${attempt}`);
     return [
       issueCell(t, meta),

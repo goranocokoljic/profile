@@ -29,6 +29,7 @@ import {
   readJsonl,
   writeJson,
 } from './export-build-data.mjs';
+import { pickTask } from './pick-task.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -55,13 +56,8 @@ export function parseArgs(argv) {
   return opts;
 }
 
-// The task record to name in the commit: the requested attempt, else the
-// latest one. Timestamps carry a local UTC offset, so compare them as dates.
-export function pickTask(tasks, issue, attempt = null) {
-  const mine = tasks.filter((t) => t?.issue === issue && (attempt === null || t.attempt === attempt));
-  const time = (t) => Date.parse(t.ts) || 0;
-  return mine.sort((a, b) => (b.attempt ?? 0) - (a.attempt ?? 0) || time(b) - time(a))[0] ?? null;
-}
+// The task record to name in the commit (scripts/pick-task.mjs).
+export { pickTask };
 
 // Same format as Publish-Analytics in tr-harness.ps1.
 export function commitMessage(task) {

@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const version = JSON.parse(readFileSync(path.join(ROOT, 'node_modules/@playwright/test/package.json'), 'utf8')).version;
-export const IMAGE = `mcr.microsoft.com/playwright:v${version}-noble`;
+const IMAGE = `mcr.microsoft.com/playwright:v${version}-noble`;
 const SHOTS = 'tests/__screenshots__/polish.spec.ts';
 
 const inside = [

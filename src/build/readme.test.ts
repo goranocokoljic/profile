@@ -100,6 +100,15 @@ test('a re-recorded attempt resolves to its newest record, as record-run does', 
   expect(rows(renderRunTable([old, again], {}, [{ issue: 5, attempt: 1 }]))[0]).toContain('| $3.00 |');
 });
 
+test('a ts that does not parse sorts as the oldest run, never scrambling the order', () => {
+  const picked = latestAttempts([
+    task({ issue: 1, ts: '2026-07-01T10:00:00Z' }),
+    task({ issue: 2, ts: 'not a date' }),
+    task({ issue: 3, ts: '2026-07-01T12:00:00Z' }),
+  ]);
+  expect(picked.map((t) => t.issue)).toEqual([3, 1, 2]);
+});
+
 test('replaceBlock swaps only the block, keeps $ literally and normalises CRLF', () => {
   const block = renderRunTable([task({ billed_cost_usd: 6.65 })], {}, [{ issue: 1, attempt: 1 }]);
   const readme = `# T\r\n\r\n${BLOCK_START}\r\nold\r\n${BLOCK_END}\r\n\r\nafter $& $1\r\n`;
