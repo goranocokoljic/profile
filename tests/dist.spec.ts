@@ -8,7 +8,8 @@ for (const file of ['dist/index.html', 'dist/build/index.html']) {
     expect(existsSync(file)).toBe(true);
     const html = readFileSync(file, 'utf8');
     expect(html).not.toMatch(/<script[^>]+src=["']?(https?:)?\/\//i);
-    expect(html).not.toMatch(/<link[^>]+href=["']?(https?:)?\/\//i);
+    // rel="canonical" names the page's own URL; browsers do not fetch it.
+    expect(html).not.toMatch(/<link(?![^>]*\brel="canonical")[^>]+href=["']?(https?:)?\/\//i);
   });
 
   test(`${file} has no inline styles or scripts (CSP default-src 'self')`, () => {

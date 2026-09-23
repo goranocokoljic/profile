@@ -1,12 +1,28 @@
 ---
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
+import portrait from '../assets/goran-hero.jpg';
+import { site } from '../data/site';
 import '../styles/global.scss';
 
 interface Props {
   title: string;
-  description?: string;
+  description: string;
+  // The share image; defaults to the portrait.
+  image?: ImageMetadata;
 }
 
-const { title, description } = Astro.props;
+const { title, description, image = portrait } = Astro.props;
+
+// Share tags need absolute URLs; `site` is set in astro.config.mjs.
+if (!Astro.site) throw new Error('Base.astro: `site` must be set in astro.config.mjs');
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// JPEG, not WebP: messenger link scrapers do not read WebP. 1200×630 is the
+// og:image size Facebook, LinkedIn and Viber crop to.
+const SHARE = { width: 1200, height: 630 };
+const share = await getImage({ src: image, format: 'jpeg', quality: 80, fit: 'cover', ...SHARE });
+const shareUrl = new URL(share.src, Astro.site).href;
 ---
 
 <!doctype html>
@@ -15,8 +31,23 @@ const { title, description } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
-    {description && <meta name="description" content={description} />}
+    <meta name="description" content={description} />
     <title>{title}</title>
+    <link rel="canonical" href={pageUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:site_name" content={site.pages.home.title} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={shareUrl} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content={String(SHARE.width)} />
+    <meta property="og:image:height" content={String(SHARE.height)} />
+    <meta property="og:image:alt" content={site.pages.shareImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareUrl} />
   </head>
   <body>
     <slot />

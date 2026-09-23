@@ -164,9 +164,11 @@ const contact = z.strictObject({
 // Not in content.js: the reference hard-codes its <title>, and /build has no
 // reference copy yet. Kept here so pages hold no strings of their own.
 const pages = z.strictObject({
-  home: z.strictObject({ title: text }),
+  // `description` feeds <meta name="description"> and the og:/twitter: share tags.
+  home: z.strictObject({ title: text, description: text }),
   build: z.strictObject({
     title: text,
+    description: text,
     eyebrow: text,
     heading: text,
     // The intro above the dashboard: what tr-harness is and the issue→merge
@@ -182,6 +184,8 @@ const pages = z.strictObject({
     datasetLabel: text,
     datasets: z.strictObject({ site: text, toprope: text }),
   }),
+  // og:image:alt for the share image every page uses.
+  shareImageAlt: text,
 });
 
 // Not in content.js: strings and links the reference writes into index.html,
