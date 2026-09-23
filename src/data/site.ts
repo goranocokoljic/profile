@@ -100,9 +100,14 @@ export const site = SiteSchema.parse({
     cv:'Download CV', github:'View GitHub', purecontext:'PureContext on GitHub', linkedin:'Connect on LinkedIn', email:'goran.ocokoljic@gmail.com', location:'Belgrade, Serbia · Remote / EU time zones', footer:'Written with intent. Implemented by tr-harness.'
   },
   pages: {
-    home: { title:'Goran Ocokoljić — Lead Web Engineer' },
+    home: {
+      title:'Goran Ocokoljić — Lead Web Engineer',
+      description:'Hands-on architect. 20+ high-traffic portals moved onto one shared platform, a telehealth product used by real doctors and patients, and AI delivery systems with the run data to prove it.'
+    },
     build: {
-      title:'Build record — Goran Ocokoljić', eyebrow:'HOW THIS SITE WAS BUILT', heading:'Build record',
+      title:'Build record — Goran Ocokoljić',
+      description:'Every change to this site is one GitHub issue implemented by tr-harness. Duration, review cycles, findings and billed cost for each run.',
+      eyebrow:'HOW THIS SITE WAS BUILT', heading:'Build record',
       intro:[
         'tr-harness is the autonomous development harness I designed. It takes one GitHub issue per run: it reads the issue, implements it on a branch, runs the build and tests, opens a pull request, answers independent code review for up to three cycles and merges. Every run on this repository is recorded below.',
         'Durations, review cycles and findings are measured. Billed cost per run is the amount billed. Cost per phase is an estimate, split by output tokens. The second dataset is a frozen record of tr-harness building Toprope, another project, and does not change.'
@@ -110,7 +115,8 @@ export const site = SiteSchema.parse({
       noscript:{ caption:'Runs on this site. Turn on JavaScript for the charts and the Toprope dataset.', columns:{ issue:'Issue', outcome:'Outcome', duration:'Duration', billed:'Billed' } },
       empty:'No runs recorded yet — the first tr-harness run on this repository will appear here.',
       datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' }
-    }
+    },
+    shareImageAlt:'Goran Ocokoljić'
   },
   markup: {
     monogram:'GO', homeLabel:'Goran Ocokoljić home', navLabel:'Primary navigation',

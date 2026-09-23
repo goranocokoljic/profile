@@ -25,7 +25,7 @@ const runs = [...tasks].sort((a, b) => b.ts.localeCompare(a.ts));
 const cols = build.noscript.columns;
 ---
 
-<Base title={build.title}>
+<Base title={build.title} description={build.description}>
   <Header />
   <main class="container">
     <header class="build-intro">
