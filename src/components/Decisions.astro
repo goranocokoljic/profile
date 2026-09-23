@@ -1,0 +1,78 @@
+---
+import { site } from '../data/site';
+
+const { decisions } = site.pages.build;
+const { markup } = site;
+---
+
+<section class="decisions" aria-labelledby="decisions-title">
+  <h2 id="decisions-title">{decisions.heading}</h2>
+  <div class="decision-grid">
+    {
+      decisions.items.map((item) => (
+        <article class="decision">
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+        </article>
+      ))
+    }
+  </div>
+  <a class="text-link source-link" href={markup.repoHref} target="_blank" rel="noopener">
+    {decisions.sourceLink}<span class="visually-hidden"> {markup.newTabLabel}</span>
+  </a>
+</section>
+
+<style lang="scss">
+  @use '../styles/tokens' as *;
+
+  // Type scale and spacing of the role-fit grid on the homepage.
+  .decisions {
+    padding: $space-2xl 0 72px;
+    border-bottom: 1px solid var(--fine);
+  }
+
+  h2 {
+    font-size: clamp(40px, 4vw, 60px);
+    line-height: 1;
+    letter-spacing: -0.045em;
+    margin: 0 0 54px;
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 42px 68px;
+  }
+
+  .decision {
+    h3 {
+      margin: 0 0 $space-2xs;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.48;
+      max-width: 500px;
+    }
+  }
+
+  .source-link {
+    display: inline-block;
+    margin: 54px 0 0;
+  }
+
+  @media (max-width: $bp-tablet) {
+    .decision-grid {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+  }
+
+  @media (max-width: $bp-phone) {
+    .decisions {
+      padding-top: 60px;
+    }
+  }
+</style>

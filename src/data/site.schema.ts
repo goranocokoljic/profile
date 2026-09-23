@@ -175,6 +175,15 @@ const pages = z.strictObject({
     // The intro above the dashboard: what tr-harness is and the issue→merge
     // loop; then what is real vs estimated and where the second dataset is from.
     intro: z.tuple([text, text]),
+    // "Technical decisions" between the intro and the dashboard. Six: each
+    // item is a claim about this repository that the PR for #35 backs with a
+    // file, and a new one needs the same.
+    decisions: z.strictObject({
+      heading: text,
+      items: z.array(titled).length(6),
+      // Link text of the one link to the repository (markup.repoHref).
+      sourceLink: text,
+    }),
     // The <noscript> fallback: the site dataset's runs as a plain table.
     noscript: z.strictObject({
       caption: text,
@@ -213,6 +222,8 @@ const markup = z.strictObject({
   cvHref: z.string().regex(/^\/[\w.-]+(\/[\w.-]+)*$/),
   pureContextHref: z.url({ protocol: /^https$/ }),
   githubHref: z.url({ protocol: /^https$/ }),
+  // This site's source repository, linked from the decisions on /build.
+  repoHref: z.url({ protocol: /^https$/ }),
   linkedinHref: z.url({ protocol: /^https$/ }),
   // Link text of the CV line at the end of the background section.
   backgroundCvLink: text,

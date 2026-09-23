@@ -112,6 +112,18 @@ export const site = SiteSchema.parse({
         'tr-harness is the autonomous development harness I designed. It takes one GitHub issue per run: it reads the issue, implements it on a branch, runs the build and tests, opens a pull request, answers independent code review for up to three cycles and merges. Every run on this repository is recorded below.',
         'Durations, review cycles and findings are measured. Billed cost per run is the amount billed. Cost per phase is an estimate, split by output tokens. The second dataset is a frozen record of tr-harness building Toprope, another project, and does not change.'
       ],
+      decisions:{
+        heading:'Technical decisions',
+        items:[
+          {title:'Astro, static output.',body:'A content page needs no server. Every route is prerendered; the Worker only serves files.'},
+          {title:'One island.',body:'The build-record card is the only hydrated component, because it is the only interactive, data-driven element on the homepage. Everything else there is HTML and CSS; the homepage ships no other JavaScript.'},
+          {title:'No runtime network.',body:"The build record is inlined at build time. The site works under a default-src 'self' content-security policy; nothing is fetched from anywhere at runtime."},
+          {title:'Cloudflare Worker with static assets.',body:'There is no server code: wrangler.jsonc points the Worker at the build output. Cloudflare builds develop on every push and serves it as production.'},
+          {title:'Typed content.',body:'All copy lives in one typed data file validated at build time; a missing key fails the build, not the page.'},
+          {title:'Checks on every PR.',body:'astro check, tsc, eslint, stylelint, a Playwright smoke suite with axe accessibility checks and screenshot baselines at four widths. The review agents see the same green the human does.'}
+        ],
+        sourceLink:'Source →'
+      },
       noscript:{ caption:'Runs on this site. Turn on JavaScript for the charts and the Toprope dataset.', columns:{ issue:'Issue', outcome:'Outcome', duration:'Duration', billed:'Billed' } },
       empty:'No runs recorded yet — the first tr-harness run on this repository will appear here.',
       datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' },
@@ -133,6 +145,7 @@ export const site = SiteSchema.parse({
     cvHref:'/goran-ocokoljic-cv.pdf',
     pureContextHref:'https://github.com/goranocokoljic/pure-context',
     githubHref:'https://github.com/goranocokoljic',
+    repoHref:'https://github.com/goranocokoljic/profile',
     linkedinHref:'https://www.linkedin.com/in/goranocokoljic/',
     backgroundCvLink:'Download CV →',
     newTabLabel:'(opens in a new tab)',
