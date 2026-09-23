@@ -13,3 +13,8 @@
 
 - **Port reference-global utility classes once, not as scoped copies per section.** When a reference class (e.g. .eyebrow, .text-link, .mono-label) is used by several sections, put its base rule in src/styles/global.scss and keep only per-section overrides scoped; do not copy the full rule into each component.
   - _Why:_ #4: SelectedWork.astro re-declared the full .eyebrow rule already scoped in Hero.astro; 5 more sections in the reference use it, so the copy would spread to 7 places.
+
+## testing
+
+- **Heuristic source guards need two-way self-tests on realistic markup.** When adding a regex/heuristic lint test (e.g. no inline copy), include negative fixtures from real reference markup (multi-class attrs, class:list objects, style={{}}, SVG, script/style) and positive fixtures for punctuation, non-ASCII, text beside {expr}, and literals inside expressions; route each file type (.astro/.ts/.tsx) to its own parser.
+  - _Why:_ #2: first copy guard flagged every multi-class attribute and missed the exact title it replaced; second version parsed .ts files as Astro templates and broke on nested braces.
