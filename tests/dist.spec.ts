@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 // Static checks on the build output. No browser needed.
@@ -52,4 +53,13 @@ test('the /build script makes no requests, never polls and is under 60 KB gzippe
   expect(source).not.toMatch(/\bsetInterval\s*\(/);
   expect(source).not.toMatch(/XMLHttpRequest|EventSource|WebSocket/);
   expect(gzipSync(js).length).toBeLessThan(60 * 1024);
+});
+
+// #34: the phrase read as dismissive of the target stack; it must not ship
+// anywhere in the build output.
+test('"never the hard part" does not appear anywhere in dist/', () => {
+  const text = /\.(html|js|mjs|css|json|txt|xml|svg|webmanifest)$/i;
+  const files = (readdirSync('dist', { recursive: true }) as string[]).filter((f) => text.test(f));
+  expect(files).toContain('index.html');
+  for (const f of files) expect(readFileSync(join('dist', f), 'utf8'), f).not.toMatch(/never the hard part/i);
 });
