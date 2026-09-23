@@ -11,7 +11,7 @@ import styles from './BuildRecord.module.scss';
 export interface BuildRecordCopy {
   /** KPI labels in order: tasks, successful runs, findings, wall time, billed cost. */
   metrics: string[];
-  /** Sub-lines under the findings KPI. */
+  /** Sub-line under the findings KPI. */
   breakdown: FindingsBreakdownCopy;
   cta: string;
   ctaHref: string;
@@ -53,16 +53,7 @@ export default function BuildRecord({ summary, copy }: Props) {
           <div key={label}>
             <dt>{label}</dt>
             <dd>{values[i]}</dd>
-            {i === FINDINGS && latest ? (
-              <>
-                <dd className={styles.sub}>{fmtBreakdown(summary.breakdown, copy.breakdown)}</dd>
-                {summary.fixed !== null ? (
-                  <dd className={styles.sub}>
-                    {fmtInt(summary.fixed)} {copy.breakdown.fixed}
-                  </dd>
-                ) : null}
-              </>
-            ) : null}
+            {i === FINDINGS && latest ? <dd className={styles.sub}>{fmtBreakdown(summary.breakdown, copy.breakdown)}</dd> : null}
           </div>
         ))}
       </dl>

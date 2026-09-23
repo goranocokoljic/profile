@@ -167,7 +167,6 @@ export interface FindingsBreakdownCopy {
   blocker: string;
   medium: string;
   low: string;
-  fixed: string;
 }
 
 /** Review totals the exporter sums over review-cycles.jsonl. */
@@ -175,8 +174,20 @@ export interface DatasetSummary {
   /** The five severities plus the derived `blocker` (critical + high). */
   findingsBySeverity: Findings & { blocker: number };
   findingsTotal: number;
-  /** Absent when no cycle recorded dispositions. */
+  /**
+   * Summed over only the cycles that recorded dispositions; absent when none
+   * did. Partial data, not a headline: few cycles report dispositions, and
+   * they are deduped counts while `findingsTotal` is raw across lenses.
+   */
   dispositions?: Dispositions;
+  /** How many of the review cycles `dispositions` covers. */
+  dispositionsCoverage: DispositionsCoverage;
+}
+
+/** `cycles` recorded dispositions, out of `ofCycles` review-cycle records. */
+export interface DispositionsCoverage {
+  cycles: number;
+  ofCycles: number;
 }
 
 export interface Dataset {

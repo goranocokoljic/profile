@@ -55,11 +55,62 @@ test('the /build script makes no requests, never polls and is under 60 KB gzippe
   expect(gzipSync(js).length).toBeLessThan(60 * 1024);
 });
 
+// Every text file in dist/, relative paths.
+const distTextFiles = () => readdirSync('dist', { recursive: true, encoding: 'utf8' }).filter((f) => /\.(html|js|mjs|css|json|txt|xml|svg|webmanifest)$/i.test(f));
+
 // #34: the phrase read as dismissive of the target stack; it must not ship
 // anywhere in the build output.
 test('"never the hard part" does not appear anywhere in dist/', () => {
-  const text = /\.(html|js|mjs|css|json|txt|xml|svg|webmanifest)$/i;
-  const files = readdirSync('dist', { recursive: true, encoding: 'utf8' }).filter((f) => text.test(f));
+  const files = distTextFiles();
   expect(files).toContain('index.html');
   for (const f of files) expect(readFileSync(join('dist', f), 'utf8'), f).not.toMatch(/never the hard part/i);
+});
+
+// #39: "n fixed before merge" summed dispositions from a few review cycles
+// against a findings total from all of them. It must not ship, and src/ may
+// name it only in a comment that explains the removal. The payload's recorded
+// review lessons may quote it as history (#33's lesson does); that is data,
+// not UI, so the lessons are taken out before the check. The /build page
+// inlines the same payload, which the check reads from data.json instead.
+const FIXED_LINE = /fixed before merge/i;
+const PAYLOAD_TAG = /<script type="application\/json" id="build-data">[\s\S]*?<\/script>/;
+
+const withoutLessons = (json: string): string => {
+  const payload = JSON.parse(json) as { datasets: Record<string, { lessons: unknown }> };
+  for (const d of Object.values(payload.datasets)) d.lessons = [];
+  return JSON.stringify(payload);
+};
+
+test('"fixed before merge" does not appear on either page or anywhere in dist/', () => {
+  const files = distTextFiles();
+  expect(files).toEqual(expect.arrayContaining(['index.html', join('build', 'index.html'), join('build', 'data.json')]));
+  expect(readFileSync('dist/build/index.html', 'utf8')).toMatch(PAYLOAD_TAG);
+  for (const f of files) {
+    const raw = readFileSync(join('dist', f), 'utf8');
+    const text = f === join('build', 'data.json') ? withoutLessons(raw) : raw.replace(PAYLOAD_TAG, '');
+    expect(text, f).not.toMatch(FIXED_LINE);
+  }
+});
+
+test('the lesson filter removes only the lessons', () => {
+  const payload = JSON.stringify({ datasets: { site: { lessons: [{ rationale: 'fixed before merge' }], tasks: [{ note: 'kept' }] } } });
+  expect(withoutLessons(payload)).not.toMatch(FIXED_LINE);
+  expect(withoutLessons(payload)).toContain('kept');
+  expect(withoutLessons(payload.replace('kept', 'fixed before merge'))).toMatch(FIXED_LINE);
+});
+
+const COMMENT_LINE = /^\s*(\/\/|\/?\*)/;
+
+test('the comment-line check tells comments from code', () => {
+  for (const l of ['// n fixed before merge', '  * fixed before merge', '/** fixed before merge */']) expect(l, l).toMatch(COMMENT_LINE);
+  for (const l of ["fixed:'fixed before merge' },", '<dd>{n} fixed before merge</dd>', "const s = 'x'; // fixed before merge"]) {
+    expect(l, l).not.toMatch(COMMENT_LINE);
+  }
+});
+
+test('"fixed before merge" appears in src/ only on comment lines', () => {
+  const hits = readdirSync('src', { recursive: true, encoding: 'utf8' })
+    .filter((f) => /\.(ts|tsx|astro|mjs|scss)$/.test(f))
+    .flatMap((f) => readFileSync(join('src', f), 'utf8').split('\n').filter((l) => FIXED_LINE.test(l)).map((l) => [f, l.trim()]));
+  expect(hits.filter(([, l]) => !COMMENT_LINE.test(l))).toEqual([]);
 });

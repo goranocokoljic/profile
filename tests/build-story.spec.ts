@@ -19,7 +19,8 @@ async function hydrated(page: Page): Promise<void> {
   await expect(page.locator('astro-island:not([ssr])')).toHaveCount(1);
 }
 
-// The findings KPI's sub-lines on the card: the breakdown, then "n fixed before merge".
+// The findings KPI's sub-lines on the card: only the breakdown (#39 removed the
+// dispositions line).
 // No-break spaces (number to label) read as plain spaces here.
 const cardFindingsSubs = async (page: Page) =>
   (await trail(page).locator('dl > div').nth(2).locator('dd + dd').allTextContents()).map((t) => t.replace(/ /g, ' '));
@@ -91,7 +92,7 @@ test('card KPIs equal the /build KPI row for the site dataset', async ({ page })
   const parts = /^([\d,]+) \S+ · ([\d,]+) \S+ · ([\d,]+) \S+$/.exec(subs[0])!.slice(1).map((n) => Number(n.replace(/,/g, '')));
   expect(parts.reduce((a, n) => a + n, 0)).toBe(summary.findingsTotal);
   expect(parts[0]).toBe(summary.findingsBySeverity.blocker);
-  expect(subs.slice(1)).toEqual(summary.dispositions ? [`${summary.dispositions.fixed.toLocaleString('en-US')} ${breakdown.fixed}`] : []);
+  expect(subs).toHaveLength(1);
 });
 
 test('the toggle shows and hides the last 5 runs', async ({ page }) => {
@@ -137,7 +138,7 @@ async function routeSummary(page: Page, summary: object): Promise<void> {
   });
 }
 
-const totals = { tasksCompleted: 3, successfulRuns: 4, findings: 12, breakdown: { blocker: 2, medium: 3, low: 7 }, fixed: 5, wallSec: 3600, billedUsd: 9.5 };
+const totals = { tasksCompleted: 3, successfulRuns: 4, findings: 12, breakdown: { blocker: 2, medium: 3, low: 7 }, wallSec: 3600, billedUsd: 9.5 };
 const run = { issue: 98, attempt: 1, outcome: 'failed', billedUsd: 1.25 };
 
 test('the latest run links to its issue and PR when both are known', async ({ page }) => {
@@ -153,10 +154,7 @@ test('the latest run links to its issue and PR when both are known', async ({ pa
   await expect(latest.getByRole('link', { name: '#99' })).toHaveAttribute('href', 'https://github.com/o/r/issues/99');
   await expect(latest.getByRole('link', { name: `${card.pr} #120` })).toHaveAttribute('href', 'https://github.com/o/r/pull/120');
   expect((await cardKpis(page)).map(([, v]) => v)).toEqual(['3', '4', '12', '1h ', '$9.50']);
-  expect(await cardFindingsSubs(page)).toEqual([
-    `2 ${breakdown.blocker} · 3 ${breakdown.medium} · 7 ${breakdown.low}`,
-    `5 ${breakdown.fixed}`,
-  ]);
+  expect(await cardFindingsSubs(page)).toEqual([`2 ${breakdown.blocker} · 3 ${breakdown.medium} · 7 ${breakdown.low}`]);
 });
 
 test('a latest run with no metadata shows its number without links', async ({ page }) => {
@@ -172,21 +170,9 @@ test('a latest run with no metadata shows its number without links', async ({ pa
   await expect(latest.getByRole('link')).toHaveCount(0);
 });
 
-test('with no recorded dispositions the card shows the breakdown but no fixed line', async ({ page }) => {
-  await routeSummary(page, {
-    ...totals,
-    fixed: null,
-    latest: { issue: 97, title: null, url: null, pr: null, prUrl: null, outcome: 'ok', ts: '2026-07-02T08:00:00Z' },
-    recent: [run],
-  });
-  await page.goto('/');
-  await hydrated(page);
-  expect(await cardFindingsSubs(page)).toEqual([`2 ${breakdown.blocker} · 3 ${breakdown.medium} · 7 ${breakdown.low}`]);
-});
-
 test('with no runs the card shows dashes and the empty state', async ({ page }) => {
   await routeSummary(page, {
-    tasksCompleted: 0, successfulRuns: 0, findings: 0, breakdown: { blocker: 0, medium: 0, low: 0 }, fixed: null, wallSec: 0, billedUsd: 0, latest: null, recent: [],
+    tasksCompleted: 0, successfulRuns: 0, findings: 0, breakdown: { blocker: 0, medium: 0, low: 0 }, wallSec: 0, billedUsd: 0, latest: null, recent: [],
   });
   await page.goto('/');
   await hydrated(page);
