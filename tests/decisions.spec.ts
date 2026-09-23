@@ -66,7 +66,8 @@ async function styles(page: Page, selectors: Record<Part, string>): Promise<Reco
   return out;
 }
 
-for (const [width, columns] of [[1440, 2], [390, 1]] as const) {
+// 768 sits just under the 900px switch to one column.
+for (const [width, columns] of [[1440, 2], [768, 1], [390, 1]] as const) {
   test(`decisions use the role-fit type scale and ${columns} column(s) at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
@@ -108,8 +109,10 @@ test.describe('the decisions are true of the repository', () => {
   test('One island: the homepage has one astro-island and loads only its runtime', () => {
     const html = read('dist/index.html');
     expect(html.match(/<astro-island\b/g)).toHaveLength(1);
-    // Astro's island runtime and its client:visible directive, externalized.
-    expect(html.match(/<script\b/g)).toHaveLength(2);
+    // Only Astro's island runtime, externalized under /_astro/: no other script.
+    const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+    expect(scripts.length).toBeGreaterThan(0);
+    for (const tag of scripts) expect(tag).toMatch(/\bsrc="\/_astro\/[^"]+"/);
   });
 
   test('Cloudflare Worker with static assets: wrangler.jsonc has assets and no server entry', () => {

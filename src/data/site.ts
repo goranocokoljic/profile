@@ -116,7 +116,7 @@ export const site = SiteSchema.parse({
         heading:'Technical decisions',
         items:[
           {title:'Astro, static output.',body:'A content page needs no server. Every route is prerendered; the Worker only serves files.'},
-          {title:'One island.',body:'The build-record card is the only hydrated component, because it is the only interactive, data-driven element. Everything else is HTML and CSS; the homepage ships no other JavaScript.'},
+          {title:'One island.',body:'The build-record card is the only hydrated component, because it is the only interactive, data-driven element on the homepage. Everything else there is HTML and CSS; the homepage ships no other JavaScript.'},
           {title:'No runtime network.',body:"The build record is inlined at build time. The site works under a default-src 'self' content-security policy; nothing is fetched from anywhere at runtime."},
           {title:'Cloudflare Worker with static assets.',body:'There is no server code: wrangler.jsonc points the Worker at the build output. Cloudflare builds develop on every push and serves it as production.'},
           {title:'Typed content.',body:'All copy lives in one typed data file validated at build time; a missing key fails the build, not the page.'},
