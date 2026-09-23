@@ -116,6 +116,30 @@ test('markup.pureContextHref accepts only an absolute https URL', async () => {
   }
 });
 
+test('markup.repoHref accepts only an absolute https URL', async () => {
+  const site = await loadSite();
+  const parse = (repoHref: string) => SiteSchema.safeParse({ ...site, markup: { ...site.markup, repoHref } });
+  expect(parse('https://github.com/goranocokoljic/profile').success).toBe(true);
+  for (const bad of ['http://github.com/goranocokoljic/profile', 'javascript:alert(1)', '/profile', '#decisions', '']) {
+    const result = parse(bad);
+    expect(result.success, bad).toBe(false);
+    expect(z.prettifyError(result.error!)).toContain('at markup.repoHref');
+  }
+});
+
+test('pages.build.decisions holds exactly six items', async () => {
+  const site = await loadSite();
+  const { build } = site.pages;
+  const parse = (items: Site['pages']['build']['decisions']['items']) =>
+    SiteSchema.safeParse({ ...site, pages: { ...site.pages, build: { ...build, decisions: { ...build.decisions, items } } } });
+  expect(parse(build.decisions.items).success).toBe(true);
+  for (const items of [build.decisions.items.slice(0, 5), [...build.decisions.items, build.decisions.items[0]]]) {
+    const result = parse(items);
+    expect(result.success, `${items.length} items`).toBe(false);
+    expect(z.prettifyError(result.error!)).toContain('at pages.build.decisions.items');
+  }
+});
+
 test('pages.build.footnotes.trend.site rejects a typed run count', async () => {
   const site = await loadSite();
   const { build } = site.pages;
