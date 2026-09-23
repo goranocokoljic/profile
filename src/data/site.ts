@@ -127,7 +127,7 @@ export const site = SiteSchema.parse({
       noscript:{ caption:'Runs on this site. Turn on JavaScript for the charts and the Toprope dataset.', columns:{ issue:'Issue', outcome:'Outcome', duration:'Duration', billed:'Billed' } },
       empty:'No runs recorded yet — the first tr-harness run on this repository will appear here.',
       datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' },
-      findingsBreakdown:{ blocker:'blocker/high', medium:'medium', low:'low/style', fixed:'fixed before merge' },
+      findingsBreakdown:{ blocker:'blocker/high', medium:'medium', low:'low/style' },
       footnotes:{
         kpis:'A finding is one item raised by an independent reviewer agent in one review cycle. Counts include items later judged non-issues; severities are the reviewer’s.',
         trend:{

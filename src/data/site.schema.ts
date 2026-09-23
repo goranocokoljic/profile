@@ -194,9 +194,10 @@ const pages = z.strictObject({
     datasetLabel: text,
     datasets: z.strictObject({ site: text, toprope: text }),
     // Sub-line under the review-findings KPI on /build and on the homepage
-    // card: "n blocker/high · n medium · n low/style"; `fixed` is the card's
-    // second line, "n fixed before merge".
-    findingsBreakdown: z.strictObject({ blocker: text, medium: text, low: text, fixed: text }),
+    // card: "n blocker/high · n medium · n low/style". The card's second line,
+    // "n fixed before merge", was removed in #39: dispositions cover only a few
+    // review cycles and are deduped, so they do not share the findings total.
+    findingsBreakdown: z.strictObject({ blocker: text, medium: text, low: text }),
     // Footnotes the dashboard shows: under the KPI row, and under the cycle-1
     // trend chart per dataset. The site's sentence carries no run count: the
     // dataset grows and a typed number would go stale.

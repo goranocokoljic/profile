@@ -34,8 +34,6 @@ export interface BuildSummary {
   findings: number;
   /** The findings KPI's sub-line, from the same per-task totals as `findings`. */
   breakdown: FindingsBreakdown;
-  /** Findings the fixer fixed before merge; `null` when no cycle recorded dispositions. */
-  fixed: number | null;
   wallSec: number;
   billedUsd: number;
   /** `null` when no run is recorded. */
@@ -55,7 +53,6 @@ export function summarize(ds: Dataset): BuildSummary {
     successfulRuns: k.ok,
     findings: k.findings,
     breakdown: findingsBreakdown(k.bySeverity),
-    fixed: ds.summary.dispositions?.fixed ?? null,
     wallSec: k.wall,
     billedUsd: k.cost,
     latest: last

@@ -75,7 +75,7 @@ test('KPIs: severities sum per key across tasks and skip tasks with no review', 
 test('findings breakdown groups critical+high and low+style, and formats in that order', () => {
   const b = findingsBreakdown({ critical: 2, high: 12, medium: 114, low: 1340, style: 1 });
   expect(b).toEqual({ blocker: 14, medium: 114, low: 1341 });
-  const copy = { blocker: 'blocker/high', medium: 'medium', low: 'low/style', fixed: 'fixed before merge' };
+  const copy = { blocker: 'blocker/high', medium: 'medium', low: 'low/style' };
   expect(fmtBreakdown(b, copy)).toBe('14 blocker/high · 114 medium · 1,341 low/style');
   expect(fmtBreakdown(findingsBreakdown({ critical: 0, high: 0, medium: 0, low: 0, style: 0 }), copy)).toBe('0 blocker/high · 0 medium · 0 low/style');
 });

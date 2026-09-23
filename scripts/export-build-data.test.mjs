@@ -64,6 +64,11 @@ function assertDatasetShape(d) {
   assert.equal(findingsTotal, d.reviewCycles.reduce((a, c) => a + (c.findings?.total ?? 0), 0), 'findingsTotal = sum of findings.total');
   assert.equal(sev.blocker, sev.critical + sev.high, 'blocker = critical + high');
   assert.equal('dispositions' in d.summary, d.reviewCycles.some((c) => c.dispositions), 'dispositions only when recorded');
+  // Coverage: derived from the cycle records, never typed.
+  const { cycles, ofCycles } = d.summary.dispositionsCoverage;
+  assert.equal(ofCycles, d.reviewCycles.length, 'ofCycles = number of cycle records');
+  assert.equal(cycles, d.reviewCycles.filter((c) => c.dispositions && typeof c.dispositions === 'object').length, 'cycles = records with dispositions');
+  assert.ok(cycles <= ofCycles, 'cycles <= ofCycles');
 }
 
 let tmp;
@@ -100,8 +105,8 @@ describe('committed datasets', () => {
     });
   }
 
-  // The homepage card reads summary.dispositions; the card and /build KPI
-  // breakdowns come from computeKpis over tasks. Both sources must agree.
+  // The homepage card and /build KPI breakdowns come from computeKpis over
+  // tasks; the summary comes from the cycles. Both sources must agree.
   test('summary severities equal the /build KPI sums over tasks', () => {
     for (const [name, d] of Object.entries(payload.datasets)) {
       const k = computeKpis(d.tasks);
@@ -170,6 +175,7 @@ describe('edge cases', () => {
     assert.deepEqual(summarizeReviews([]), {
       findingsBySeverity: { critical: 0, high: 0, medium: 0, low: 0, style: 0, blocker: 0 },
       findingsTotal: 0,
+      dispositionsCoverage: { cycles: 0, ofCycles: 0 },
     });
   });
 
@@ -186,11 +192,13 @@ describe('edge cases', () => {
     assert.deepEqual(s.findingsBySeverity, { critical: 3, high: 3, medium: 4, low: 7, style: 5, blocker: 6 });
     assert.equal(s.findingsTotal, 22);
     assert.deepEqual(s.dispositions, { fixed: 4, rejected_intentional: 1, rejected_wrong: 2, deferred: 11 });
+    assert.deepEqual(s.dispositionsCoverage, { cycles: 2, ofCycles: 6 });
   });
 
   test('summarizeReviews: cycles whose dispositions are all null omit the key', () => {
     const s = summarizeReviews([{ findings: { critical: 0, high: 1, medium: 0, low: 0, style: 0 }, dispositions: null }]);
     assert.equal('dispositions' in s, false);
+    assert.deepEqual(s.dispositionsCoverage, { cycles: 0, ofCycles: 1 });
     assert.equal(s.findingsTotal, 1);
   });
 

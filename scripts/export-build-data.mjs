@@ -17,7 +17,10 @@
 // `summary` holds review totals summed over review-cycles.jsonl:
 // `findingsBySeverity` (the five recorded severities plus the derived
 // `blocker` = critical + high, never summed from the rows), `findingsTotal`,
-// and `dispositions` only when at least one cycle recorded them.
+// `dispositions` only when at least one cycle recorded them, and
+// `dispositionsCoverage` = {cycles, ofCycles}: how many cycle records carry
+// dispositions, out of all of them. Dispositions are partial, so they are
+// data for the per-run view, not a headline number.
 //
 // Stripped at export time from the toprope snapshot only: `file_globs` on
 // lessons (paths into a private codebase; everything else is kept as recorded).
@@ -160,6 +163,7 @@ export function summarizeReviews(cycles) {
   };
   const recorded = cycles.map((c) => c?.dispositions).filter((d) => d && typeof d === 'object');
   if (recorded.length) summary.dispositions = sumKeys(recorded, DISPOSITIONS);
+  summary.dispositionsCoverage = { cycles: recorded.length, ofCycles: cycles.length };
   return summary;
 }
 

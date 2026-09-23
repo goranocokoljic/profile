@@ -15,7 +15,7 @@ function task(over: Partial<Task> = {}): Task {
 
 const info = { count: 0, skipped: 0, mtime: null };
 
-const noFindings = { findingsBySeverity: { critical: 0, high: 0, medium: 0, low: 0, style: 0, blocker: 0 }, findingsTotal: 0 };
+const noFindings = { findingsBySeverity: { critical: 0, high: 0, medium: 0, low: 0, style: 0, blocker: 0 }, findingsTotal: 0, dispositionsCoverage: { cycles: 0, ofCycles: 0 } };
 
 function dataset(tasks: Task[], meta: Dataset['meta'] = {}, summary: Dataset['summary'] = noFindings): Dataset {
   return {
@@ -29,7 +29,7 @@ const review = (n: number): Task['review'] => ({ cycles_run: 1, max_cycles: 3, t
 
 test('an empty dataset has zero totals, no latest run and no recent runs', () => {
   expect(summarize(dataset([]))).toEqual({
-    tasksCompleted: 0, successfulRuns: 0, findings: 0, breakdown: { blocker: 0, medium: 0, low: 0 }, fixed: null,
+    tasksCompleted: 0, successfulRuns: 0, findings: 0, breakdown: { blocker: 0, medium: 0, low: 0 },
     wallSec: 0, billedUsd: 0, latest: null, recent: [],
   });
 });
@@ -94,9 +94,9 @@ test('the findings breakdown groups the per-task severities the /build KPI sums'
   expect(s.breakdown.blocker + s.breakdown.medium + s.breakdown.low).toBe(s.findings);
 });
 
-test('fixed comes from the exporter summary dispositions, null when none were recorded', () => {
+// #39: dispositions cover a few cycles only, so the card carries no aggregate of them.
+test('the summary carries no dispositions aggregate, even when the dataset has one', () => {
   const dispositions = { fixed: 18, rejected_intentional: 0, rejected_wrong: 1, deferred: 35 };
-  expect(summarize(dataset([task()], {}, { ...noFindings, dispositions })).fixed).toBe(18);
-  expect(summarize(dataset([task()], {}, { ...noFindings, dispositions: { ...dispositions, fixed: 0 } })).fixed).toBe(0);
-  expect(summarize(dataset([task()])).fixed).toBeNull();
+  const s = summarize(dataset([task()], {}, { ...noFindings, dispositions, dispositionsCoverage: { cycles: 1, ofCycles: 4 } }));
+  expect(Object.keys(s).sort()).toEqual(['billedUsd', 'breakdown', 'findings', 'latest', 'recent', 'successfulRuns', 'tasksCompleted', 'wallSec']);
 });
