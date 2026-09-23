@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { datasetFromHash } from './dashboard';
-import { fmtCtx, fmtDateTime, fmtDur, fmtUsd, inkFor, median, niceTicks, shortModel } from './format';
+import { fmtBreakdown, fmtCtx, fmtDateTime, fmtDur, fmtUsd, inkFor, median, niceTicks, shortModel } from './format';
 import { runColumns, sortRuns } from './runs';
 import {
   computeKpis,
@@ -8,11 +8,12 @@ import {
   cycleOneTrend,
   filterEpics,
   filterTasks,
+  findingsBreakdown,
   phaseStats,
   severityByDay,
   type TaskRow,
 } from './stats';
-import type { Epic, Payload, Phase, Task } from './types';
+import type { Epic, Findings, Payload, Phase, Task } from './types';
 
 // Pure parts of the dashboard. The browser tests compare the rendered page
 // with the reference; these pin the edge cases the real data does not hit.
@@ -43,7 +44,9 @@ test('formatters match the reference output', () => {
 });
 
 test('KPIs: empty input gives zeros and a null median', () => {
-  expect(computeKpis([])).toEqual({ runs: 0, ok: 0, incomplete: 0, failed: 0, cost: 0, wall: 0, medCost: null, findings: 0 });
+  expect(computeKpis([])).toEqual({ runs: 0, ok: 0, incomplete: 0, failed: 0, cost: 0, wall: 0, medCost: null, findings: 0,
+    bySeverity: { critical: 0, high: 0, medium: 0, low: 0, style: 0 },
+  });
 });
 
 test('KPIs: median is over ok runs only; findings sum every severity', () => {
@@ -55,7 +58,26 @@ test('KPIs: median is over ok runs only; findings sum every severity', () => {
     task({ billed_cost_usd: 100, outcome: 'failed', total_sec: 60 }),
     task({ billed_cost_usd: 5, outcome: 'incomplete' }),
   ]);
-  expect(k).toEqual({ runs: 4, ok: 2, incomplete: 1, failed: 1, cost: 109, wall: 1860, medCost: 2, findings: 15 });
+  expect(k).toEqual({ runs: 4, ok: 2, incomplete: 1, failed: 1, cost: 109, wall: 1860, medCost: 2, findings: 15, bySeverity: findings });
+});
+
+test('KPIs: severities sum per key across tasks and skip tasks with no review', () => {
+  const review = (f: Findings): Task['review'] => ({ cycles_run: 1, max_cycles: 3, total_review_sec: 0, total_fix_sec: 0, findings_total: f });
+  const k = computeKpis([
+    task({ review: review({ critical: 1, high: 2, medium: 3, low: 4, style: 5 }) }),
+    task({ review: null }),
+    task({ review: review({ critical: 0, high: 10, medium: 0, low: 1, style: 2 }) }),
+  ]);
+  expect(k.bySeverity).toEqual({ critical: 1, high: 12, medium: 3, low: 5, style: 7 });
+  expect(k.findings).toBe(28);
+});
+
+test('findings breakdown groups critical+high and low+style, and formats in that order', () => {
+  const b = findingsBreakdown({ critical: 2, high: 12, medium: 114, low: 1340, style: 1 });
+  expect(b).toEqual({ blocker: 14, medium: 114, low: 1341 });
+  const copy = { blocker: 'blocker/high', medium: 'medium', low: 'low/style', fixed: 'fixed before merge' };
+  expect(fmtBreakdown(b, copy)).toBe('14 blocker/high · 114 medium · 1,341 low/style');
+  expect(fmtBreakdown(findingsBreakdown({ critical: 0, high: 0, medium: 0, low: 0, style: 0 }), copy)).toBe('0 blocker/high · 0 medium · 0 low/style');
 });
 
 test('filters: period cutoff, outcome buckets and date order', () => {

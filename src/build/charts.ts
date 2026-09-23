@@ -439,7 +439,8 @@ function shareBar(container: HTMLElement, perPhase: { name: string; share: numbe
 }
 
 /* ------------------------------------------ chart: cycle-1 findings trend */
-export function renderTrendCard(el: HTMLElement, tasks: TaskRow[], view: View): void {
+/** `note` is the dataset's footnote from site.ts: how far the trend can be read. */
+export function renderTrendCard(el: HTMLElement, tasks: TaskRow[], view: View, note: string): void {
   const pts = cycleOneTrend(tasks);
   const raw = view.cssVar('--deemph');
   const acc = view.cssVar('--series-1');
@@ -453,7 +454,7 @@ export function renderTrendCard(el: HTMLElement, tasks: TaskRow[], view: View): 
         { label: 'per run', color: raw, type: 'line' },
         { label: `rolling avg (${TREND_WINDOW} runs)`, color: acc, type: 'line' },
       ],
-      note: 'Falling trend = the review KB is paying off: fewer findings surface on the first review pass.',
+      note,
       table: {
         cols: [{ label: 'Issue' }, { label: 'Date' }, { label: 'Cycle-1 findings', num: true }, { label: 'Rolling avg', num: true }],
         rows: pts.map((p) => ['#' + p.issue, fmtDay(p.date), String(p.v), p.roll.toFixed(1)]),

@@ -3,13 +3,16 @@
 // in as props; this file holds no copy and reads no files.
 
 import { useId, useState } from 'react';
-import { fmtDur, fmtInt, fmtUsd } from '../build/format';
+import { fmtBreakdown, fmtDur, fmtInt, fmtUsd } from '../build/format';
 import type { BuildSummary } from '../build/summary';
+import type { FindingsBreakdownCopy } from '../build/types';
 import styles from './BuildRecord.module.scss';
 
 export interface BuildRecordCopy {
   /** KPI labels in order: tasks, successful runs, findings, wall time, billed cost. */
   metrics: string[];
+  /** Sub-lines under the findings KPI. */
+  breakdown: FindingsBreakdownCopy;
   cta: string;
   ctaHref: string;
   latest: string;
@@ -20,6 +23,9 @@ export interface BuildRecordCopy {
   columns: { issue: string; outcome: string; billed: string };
   empty: string;
 }
+
+/** Index of the review-findings KPI in `metrics`. */
+const FINDINGS = 2;
 
 interface Props {
   summary: BuildSummary;
@@ -47,6 +53,16 @@ export default function BuildRecord({ summary, copy }: Props) {
           <div key={label}>
             <dt>{label}</dt>
             <dd>{values[i]}</dd>
+            {i === FINDINGS && latest ? (
+              <>
+                <dd className={styles.sub}>{fmtBreakdown(summary.breakdown, copy.breakdown)}</dd>
+                {summary.fixed !== null ? (
+                  <dd className={styles.sub}>
+                    {fmtInt(summary.fixed)} {copy.breakdown.fixed}
+                  </dd>
+                ) : null}
+              </>
+            ) : null}
           </div>
         ))}
       </dl>

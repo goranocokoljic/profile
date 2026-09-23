@@ -9,14 +9,17 @@ import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { computeKpis } from '../src/build/stats.ts';
 import {
   DATASETS,
   FILES,
+  SEVERITIES,
   buildDataset,
   buildPayload,
   fetchMeta,
   readJsonl,
   resolveMeta,
+  summarizeReviews,
 } from './export-build-data.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,6 +57,13 @@ function assertDatasetShape(d) {
     assert.equal(typeof d.files[key].skipped, 'number');
     assert.ok(d.files[key].mtime === null || !Number.isNaN(Date.parse(d.files[key].mtime)));
   }
+  // Review summary: the severities sum to the total, which is the sum of the
+  // recorded per-cycle totals; blocker is derived, not summed.
+  const { findingsBySeverity: sev, findingsTotal } = d.summary;
+  assert.equal(SEVERITIES.reduce((a, k) => a + sev[k], 0), findingsTotal, 'severities sum to findingsTotal');
+  assert.equal(findingsTotal, d.reviewCycles.reduce((a, c) => a + (c.findings?.total ?? 0), 0), 'findingsTotal = sum of findings.total');
+  assert.equal(sev.blocker, sev.critical + sev.high, 'blocker = critical + high');
+  assert.equal('dispositions' in d.summary, d.reviewCycles.some((c) => c.dispositions), 'dispositions only when recorded');
 }
 
 let tmp;
@@ -89,6 +99,18 @@ describe('committed datasets', () => {
       }
     });
   }
+
+  // The homepage card reads summary.dispositions; the card and /build KPI
+  // breakdowns come from computeKpis over tasks. Both sources must agree.
+  test('summary severities equal the /build KPI sums over tasks', () => {
+    for (const [name, d] of Object.entries(payload.datasets)) {
+      const k = computeKpis(d.tasks);
+      const { blocker, ...sev } = d.summary.findingsBySeverity;
+      assert.deepEqual(sev, k.bySeverity, name);
+      assert.equal(d.summary.findingsTotal, k.findings, name);
+      assert.equal(blocker, k.bySeverity.critical + k.bySeverity.high, name);
+    }
+  });
 
   test('toprope is the frozen 172-run snapshot', () => {
     const d = payload.datasets.toprope;
@@ -142,6 +164,34 @@ describe('edge cases', () => {
     const d = await buildDataset(path.join(tmp, 'does-not-exist'), DATASETS.toprope, NO_GH);
     assert.deepEqual(d.tasks, []);
     assert.equal(d.files.lessons.count, 0);
+  });
+
+  test('summarizeReviews: no cycles is all zeros with no dispositions key', () => {
+    assert.deepEqual(summarizeReviews([]), {
+      findingsBySeverity: { critical: 0, high: 0, medium: 0, low: 0, style: 0, blocker: 0 },
+      findingsTotal: 0,
+    });
+  });
+
+  test('summarizeReviews: sums severities and only the cycles that recorded dispositions', () => {
+    const f = (critical, high, medium, low, style) => ({ critical, high, medium, low, style, blocker: 99, total: critical + high + medium + low + style });
+    const s = summarizeReviews([
+      { findings: f(1, 2, 3, 4, 5), dispositions: { fixed: 3, rejected_intentional: 1, rejected_wrong: 0, deferred: 11 } },
+      { findings: f(0, 1, 0, 2, 0), dispositions: null },
+      { findings: f(2, 0, 1, 0, 0) },
+      { findings: null },
+      null,
+      { findings: f(0, 0, 0, 1, 0), dispositions: { fixed: 1, rejected_intentional: 0, rejected_wrong: 2, deferred: 0 } },
+    ]);
+    assert.deepEqual(s.findingsBySeverity, { critical: 3, high: 3, medium: 4, low: 7, style: 5, blocker: 6 });
+    assert.equal(s.findingsTotal, 22);
+    assert.deepEqual(s.dispositions, { fixed: 4, rejected_intentional: 1, rejected_wrong: 2, deferred: 11 });
+  });
+
+  test('summarizeReviews: cycles whose dispositions are all null omit the key', () => {
+    const s = summarizeReviews([{ findings: { critical: 0, high: 1, medium: 0, low: 0, style: 0 }, dispositions: null }]);
+    assert.equal('dispositions' in s, false);
+    assert.equal(s.findingsTotal, 1);
   });
 
   test('bad lines are skipped and counted, blank lines ignored', async () => {

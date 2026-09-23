@@ -14,6 +14,11 @@
 // `files.<name>.skipped`, a missing file is an empty list. A missing or empty
 // dataset directory is a valid dataset with empty arrays, never an error.
 //
+// `summary` holds review totals summed over review-cycles.jsonl:
+// `findingsBySeverity` (the five recorded severities plus the derived
+// `blocker` = critical + high, never summed from the rows), `findingsTotal`,
+// and `dispositions` only when at least one cycle recorded them.
+//
 // Stripped at export time from the toprope snapshot only: `file_globs` on
 // lessons (paths into a private codebase; everything else is kept as recorded).
 //
@@ -142,6 +147,22 @@ export async function resolveMeta(dir, tasks, runGh = ghJson) {
   return { meta: { ...committed, ...live }, live: live !== null };
 }
 
+export const SEVERITIES = ['critical', 'high', 'medium', 'low', 'style'];
+export const DISPOSITIONS = ['fixed', 'rejected_intentional', 'rejected_wrong', 'deferred'];
+
+const sumKeys = (rows, keys) => Object.fromEntries(keys.map((k) => [k, rows.reduce((a, r) => a + (Number(r?.[k]) || 0), 0)]));
+
+export function summarizeReviews(cycles) {
+  const bySeverity = sumKeys(cycles.map((c) => c?.findings), SEVERITIES);
+  const summary = {
+    findingsBySeverity: { ...bySeverity, blocker: bySeverity.critical + bySeverity.high },
+    findingsTotal: SEVERITIES.reduce((a, k) => a + bySeverity[k], 0),
+  };
+  const recorded = cycles.map((c) => c?.dispositions).filter((d) => d && typeof d === 'object');
+  if (recorded.length) summary.dispositions = sumKeys(recorded, DISPOSITIONS);
+  return summary;
+}
+
 export async function buildDataset(dir, config, { runGh = ghJson } = {}) {
   const keys = Object.keys(FILES);
   const read = await Promise.all(keys.map((k) => readJsonl(path.join(dir, FILES[k]))));
@@ -153,6 +174,7 @@ export async function buildDataset(dir, config, { runGh = ghJson } = {}) {
   });
   const strip = config.stripLessonKeys ?? [];
   dataset.lessons = dataset.lessons.map((row) => omitKeys(row, strip));
+  dataset.summary = summarizeReviews(dataset.reviewCycles);
   if (config.meta) dataset.meta = (await resolveMeta(dir, dataset.tasks, runGh)).meta;
   return dataset;
 }

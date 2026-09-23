@@ -115,3 +115,21 @@ test('markup.pureContextHref accepts only an absolute https URL', async () => {
     expect(z.prettifyError(result.error!)).toContain('at markup.pureContextHref');
   }
 });
+
+test('pages.build.footnotes.trend.site rejects a typed run count', async () => {
+  const site = await loadSite();
+  const { build } = site.pages;
+  const parse = (text: string) =>
+    SiteSchema.safeParse({ ...site, pages: { ...site.pages, build: { ...build, footnotes: { ...build.footnotes, trend: { ...build.footnotes.trend, site: text } } } } });
+  expect(parse(build.footnotes.trend.site).success).toBe(true);
+  for (const bad of ['Trend over 15 runs.', 'Across 3 runs; a signal.', '']) {
+    const result = parse(bad);
+    expect(result.success, bad).toBe(false);
+    expect(z.prettifyError(result.error!)).toContain('at pages.build.footnotes.trend.site');
+  }
+});
+
+test('the trend footnotes make no causal claim', async () => {
+  const { trend } = (await loadSite()).pages.build.footnotes;
+  for (const note of Object.values(trend)) expect(note).not.toMatch(/proof|proves|paying off/i);
+});

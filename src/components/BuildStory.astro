@@ -10,6 +10,7 @@ const { label, ...cardCopy } = markup.buildRecord;
 const copy: BuildRecordCopy = {
   ...cardCopy,
   metrics: buildStory.metrics.map(([metric]) => metric),
+  breakdown: site.pages.build.findingsBreakdown,
   cta: buildStory.cta,
   ctaHref: '/build',
 };

@@ -62,7 +62,12 @@ for (const dataset of ['toprope', 'site'] as const) {
 
     await page.goto(`/build#dataset=${dataset}`);
     const root = dash(page);
-    expect(await tiles(root.locator('.kpis'))).toEqual(refKpis);
+    // The findings tile's sub-line is this site's breakdown, not the
+    // reference's "caught across all cycles"; label and value still match.
+    const ours = await tiles(root.locator('.kpis'));
+    expect(ours.map(([l, v, sub]) => (l === 'Review findings' ? [l, v] : [l, v, sub]))).toEqual(
+      refKpis.map(([l, v, sub]) => (l === 'Review findings' ? [l, v] : [l, v, sub])),
+    );
     await expect(root.locator('.asof')).toHaveText(refAsof);
     const cards = root.locator('.grid').first().locator('.card');
     for (const [i, id] of ['cost', 'trend', 'phases', 'sev'].entries()) {
@@ -81,6 +86,29 @@ test('toprope KPI tiles show the recorded track record', async ({ page }) => {
   await page.goto('/build#dataset=toprope');
   const values = await dash(page).locator('.kpis .value').allInnerTexts();
   expect(values).toEqual(['172', '83%', '$3,731', '163h 28m', '$15.71', '2,735']);
+});
+
+test('the findings tile shows the severity breakdown for both datasets', async ({ page }) => {
+  const b = build.findingsBreakdown;
+  for (const dataset of ['site', 'toprope'] as const) {
+    const { findingsBySeverity: sev } = payload().datasets[dataset].summary;
+    await page.goto(`/build#dataset=${dataset}`);
+    const tile = dash(page).locator('.kpis .tile', { hasText: 'Review findings' });
+    const n = (x: number) => x.toLocaleString('en-US');
+    await expect(tile.locator('.sub')).toHaveText(`${n(sev.blocker)} ${b.blocker} · ${n(sev.medium)} ${b.medium} · ${n(sev.low + sev.style)} ${b.low}`);
+  }
+  // Pinned, so an exporter and renderer drifting together still fails.
+  await expect(dash(page).locator('.kpis .tile', { hasText: 'Review findings' }).locator('.sub')).toHaveText(`256 ${b.blocker} · 854 ${b.medium} · 1,625 ${b.low}`);
+});
+
+test('the KPI row and the trend chart carry the footnotes from site.ts', async ({ page }) => {
+  for (const dataset of ['site', 'toprope'] as const) {
+    await page.goto(`/build#dataset=${dataset}`);
+    await expect(dash(page).locator('.kpis + .footnote')).toHaveText(build.footnotes.kpis);
+    const trend = dash(page).locator('.card', { has: page.getByRole('heading', { name: 'Findings in review cycle 1 per run' }) });
+    await expect(trend.locator('.footnote')).toHaveText(build.footnotes.trend[dataset]);
+    await expect(trend.locator('.footnote')).not.toContainText(/proof|paying off/i);
+  }
 });
 
 test('the runs table matches the reference row for row', async ({ page }) => {

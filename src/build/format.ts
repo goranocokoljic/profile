@@ -1,7 +1,14 @@
 // Formatters and small numeric helpers, ported function-for-function from
 // design-reference/dashboard/index.html. Pure: no DOM, safe to unit-test.
 
+import type { FindingsBreakdown, FindingsBreakdownCopy } from './types';
+
 export const fmtInt = (n: number): string => n.toLocaleString('en-US');
+
+/** "14 blocker/high · 114 medium · 341 low/style": the findings KPI sub-line. */
+export function fmtBreakdown(b: FindingsBreakdown, copy: FindingsBreakdownCopy): string {
+  return `${fmtInt(b.blocker)} ${copy.blocker} · ${fmtInt(b.medium)} ${copy.medium} · ${fmtInt(b.low)} ${copy.low}`;
+}
 
 export function fmtUsd(v: number | null | undefined): string {
   if (v == null || isNaN(v)) return '—';

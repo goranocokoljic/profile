@@ -148,7 +148,11 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
     gap: 12px;
-    margin-bottom: 18px;
+  }
+
+  // What a finding is, under the KPI row; same type as the chart footnotes.
+  .kpi-note {
+    margin: 8px 0 18px;
   }
 
   .tile {

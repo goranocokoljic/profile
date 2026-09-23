@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 import { fmtDur, fmtUsd } from '../build/format';
 import { readPayloadJson } from '../build/load';
+import type { DashboardCopy } from '../build/dashboard';
 import type { Payload } from '../build/types';
 import '../styles/dashboard.scss';
 
@@ -16,7 +17,14 @@ const { build } = site.pages;
 const raw = readPayloadJson();
 const payload = JSON.parse(raw) as Payload;
 const payloadJson = raw.replace(/</g, '\\u003c');
-const copy = JSON.stringify({ datasetLabel: build.datasetLabel, datasets: build.datasets, empty: build.empty });
+const dashboardCopy: DashboardCopy = {
+  datasetLabel: build.datasetLabel,
+  datasets: build.datasets,
+  empty: build.empty,
+  findingsBreakdown: build.findingsBreakdown,
+  footnotes: build.footnotes,
+};
+const copy = JSON.stringify(dashboardCopy);
 
 // The <noscript> table: the site dataset's runs, newest first, as the
 // dashboard's runs table orders them by default.
