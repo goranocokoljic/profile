@@ -18,10 +18,10 @@ export const site = SiteSchema.parse({
     title:'Why this role, specifically',
     intro:'Three things in the role map directly onto work I have already done, and one is the reason I am applying at all.',
     items:[
-      {title:'Unify what has grown organically',body:'I did exactly this for a portfolio of 20+ news portals: repeated per-site implementations became one shared Vue/Nuxt platform, without slowing the products running on it. The pattern transfers to React and Astro; the framework was never the hard part.'},
+      {title:'Unify what has grown organically',body:'I did exactly this for a portfolio of 20+ news portals: repeated per-site implementations became one shared Vue/Nuxt platform, evolved underneath products serving millions of pageviews a day. The routing, component and deployment conventions are what carried the teams; those transfer.'},
       {title:'“Far beyond insurance”',body:'A nomad in Bali with a stomach bug does not want a claims form, they want a doctor on a call within the hour. I have built that product. VisMedic was a telehealth platform used by real doctors and patients through private healthcare providers.'},
       {title:'Let the whole team ship safely',body:'I am building Toprope, a product that monitors and improves AI adoption in engineering organisations, and tr-harness, the autonomous harness that builds it. Independent review, state verification, bounded retries and telemetry are the same guardrails that let non-engineers contribute without lowering the bar.'},
-      {title:'AI agents, daily, with evidence',body:'Claude Code every day. Two harnesses and an MCP server built with it, over 100 recorded runs with cost and outcome per task. This application is one of those runs.'}
+      {title:'AI agents, daily, with evidence',body:'Claude Code every day. On my previous project tr-harness delivered 137 GitHub issues in 172 recorded runs with cost and outcome per task; this site is its next project. Every number is on the build page.'}
     ]
   },
   selected: { label:'SELECTED WORK', items:[
@@ -34,7 +34,7 @@ export const site = SiteSchema.parse({
     title:'20+ live portals, one shared platform, no pause for the business.',
     intro1:'I architected and led the shared web platform for a portfolio of high-traffic publishing products. News Theme grew into a configurable Vue/Nuxt framework powering 20+ portals, replacing portal-by-portal implementations with shared routing, components, APIs and infrastructure.',
     intro2:'These were live products serving millions of pageviews a day, so the platform had to evolve underneath them. Modernising the stack also meant modernising delivery: mandatory review, automated quality gates, front-end testing and CI/CD became part of the system rather than optional team practice.',
-    shiftTitle:'The important shift wasn’t Vue or Nuxt.', shiftBody:'It was moving repeated product problems into a shared system multiple teams could evolve together. That is a React Router or Astro problem exactly as much as a Nuxt one.',
+    shiftTitle:'The hard part wasn’t Nuxt.', shiftBody:'It was migrating live products without stopping them, and turning repeated problems into shared conventions several teams could evolve together. That is the same problem in React Router or Astro, and it is the one I would be solving in this role.',
     ownershipTitle:'Between architecture and implementation.', ownershipBody:'I set technical direction, work hands-on on the difficult parts, and turn decisions into patterns other engineers can build on.',
     closing:'Platform work does not remove complexity. It puts complexity in the right place so product teams stop solving the same problem twice.',
     roleLabels:['ARCHITECTURE','HANDS-ON','PERFORMANCE','DELIVERY','CROSS-TEAM DIRECTION'],
@@ -48,7 +48,7 @@ export const site = SiteSchema.parse({
     devLabel:'TR-HARNESS · FROM ISSUE TO MERGED PR', devTitle:'The agent gets the same brief an engineer would.',
     devBody:'A task with context, acceptance criteria, dependencies and architectural constraints. The agent explores the codebase, implements, runs the real build and tests, opens a pull request and responds to review findings.',
     devFlow:['GitHub issue','Understand context','Implement','Build & test','Open PR','Independent review','Fix findings','Verify state','Merge'],
-    contextLabel:'PURECONTEXT · THE CONTEXT LAYER', contextTitle:'Agents should see the right code, not all of it.', contextBody:'PureContext delivers compact, relevant context to the agent and closes the loop on changes: what was prepared, what was edited, what the verified impact is. Built across 80+ iterations, benchmarked privately before any public claim.', contextLink:'PureContext on GitHub →',
+    contextLabel:'PURECONTEXT · THE CONTEXT LAYER', contextTitle:'Agents should see the right code, not all of it.', contextBody:'PureContext delivers compact, relevant context to the agent and closes the loop on changes: what was prepared, what was edited, what the verified impact is. Benchmarked on 79 open-source projects with 25 ground-truth queries each: ahead of an existing code-search MCP on 66 of them on Precision@1.', contextLink:'PureContext on GitHub →',
     reviewLabel:'IMPLEMENTATION DOES NOT REVIEW ITSELF', reviewTitle:'Reviewers with no memory of writing the code.', reviewBody:'Isolated reviewer agents inspect a bounded diff from separate engineering perspectives. Detection happens outside the implementation context; fixes happen back inside it, where the original intent still lives.',
     lenses:['Maintainability','Security & correctness','Simplicity','Test adequacy','Reuse'],
     finished:'“Finished” is not something the agent gets to declare.', finishedBody:'The harness independently verifies repository and GitHub state before a task counts as complete.',

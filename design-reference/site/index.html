@@ -44,7 +44,6 @@
       <div class="container ai-intro"><div><p class="eyebrow" data-copy="ai.eyebrow"></p><h2 data-copy="ai.title"></h2></div><div class="ai-intro-copy"><p data-copy="ai.intro1"></p><p data-copy="ai.intro2"></p></div></div>
       <div class="container ai-dev-grid">
         <div class="ai-dev-copy"><p class="mini-label" data-copy="ai.devLabel"></p><h3 data-copy="ai.devTitle"></h3><p data-copy="ai.devBody"></p></div>
-        <div class="flow-stack" id="aiDevFlow"></div>
       </div>
       <div class="container ai-two-col">
         <article class="ai-card context-card"><p class="mini-label" data-copy="ai.contextLabel"></p><h3 data-copy="ai.contextTitle"></h3><p data-copy="ai.contextBody"></p><div class="lens-row"><span>prepare_change</span><span>edit</span><span>verify_change</span><span>compare_change_impact</span></div><a class="text-link" href="https://github.com/goranocokoljic/pure-context" target="_blank" rel="noopener" data-copy="ai.contextLink"></a></article>
@@ -88,7 +87,6 @@
     fill('portalRow',siteCopy.platform.diagram.portals,x=>{let s=document.createElement('span');s.textContent=x;return s});
     fill('foundationRow',siteCopy.platform.diagram.foundation,x=>{let s=document.createElement('span');s.textContent=x;return s});
     fill('metrics',siteCopy.platform.metrics,x=>{let d=document.createElement('div');d.className='metric';d.innerHTML=`<strong>${x.value}</strong><span>${x.label}</span>${x.note?`<small>${x.note}</small>`:''}`;return d});
-    fill('aiDevFlow',siteCopy.ai.devFlow,(x,i)=>{let d=document.createElement('div');d.className='flow-step';d.innerHTML=`<span>${String(i+1).padStart(2,'0')}</span><strong>${x}</strong>`;return d});
     fill('lensRow',siteCopy.ai.lenses,x=>{let s=document.createElement('span');s.textContent=x;return s});
     fill('controlFlow',siteCopy.ai.controls,x=>{let d=document.createElement('div');d.className='control-step';d.innerHTML=`<strong>${x[0]}</strong><span>${x[1]}</span>`;return d});
     fill('qaFlow',siteCopy.ai.qaFlow,(x,i)=>{let d=document.createElement('div');d.className='qa-step';d.innerHTML=`<span>${String(i+1).padStart(2,'0')}</span><strong>${x}</strong>`;return d});
