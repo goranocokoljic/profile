@@ -76,5 +76,17 @@
     "url": "https://github.com/goranocokoljic/profile/issues/13",
     "pr": 29,
     "prUrl": "https://github.com/goranocokoljic/profile/pull/29"
+  },
+  "14": {
+    "title": "Responsive, accessibility and performance pass; README first screen",
+    "url": "https://github.com/goranocokoljic/profile/issues/14",
+    "pr": 31,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/31"
+  },
+  "30": {
+    "title": "Open Graph share tags and a 1200×630 portrait share image",
+    "url": "https://github.com/goranocokoljic/profile/issues/30",
+    "pr": 32,
+    "prUrl": "https://github.com/goranocokoljic/profile/pull/32"
   }
 }
