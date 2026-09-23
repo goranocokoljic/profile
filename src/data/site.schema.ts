@@ -82,6 +82,7 @@ const ai = z.strictObject({
   devLabel: text,
   devTitle: text,
   devBody: text,
+  // Not rendered since #34; kept because content.js carries it verbatim.
   devFlow: z.array(text).min(1),
   contextLabel: text,
   contextTitle: text,

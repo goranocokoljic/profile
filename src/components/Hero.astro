@@ -80,6 +80,8 @@ const { hero, markup } = site;
     margin: 0;
     max-width: 760px;
     font-weight: 730;
+    // Keeps a lone word ("on.") off the last line at desktop widths (#34).
+    text-wrap: balance;
 
     span {
       display: block;
@@ -102,6 +104,7 @@ const { hero, markup } = site;
     font-size: $type-lead;
     line-height: round(nearest, 1.52em, $grid);
     max-width: 670px;
+    text-wrap: pretty;
   }
 
   .hero-actions {

@@ -23,16 +23,6 @@ const step = (i: number) => String(i + 1).padStart(2, '0');
       <h3>{ai.devTitle}</h3>
       <p>{ai.devBody}</p>
     </div>
-    <ol class="flow-stack">
-      {
-        ai.devFlow.map((name, i) => (
-          <li class="flow-step">
-            <span aria-hidden="true">{step(i)}</span>
-            <strong>{name}</strong>
-          </li>
-        ))
-      }
-    </ol>
   </div>
 
   <div class="container ai-two-col">
@@ -132,7 +122,6 @@ const step = (i: number) => String(i + 1).padStart(2, '0');
 <style lang="scss">
   @use '../styles/tokens' as *;
 
-  $flow-line: rgb(13 128 117 / 35%);
   $zone-bg: #fbfbf9;
 
   %reset-list {
@@ -198,55 +187,6 @@ const step = (i: number) => String(i + 1).padStart(2, '0');
     gap: 68px;
     padding: $space-xl 0;
     border-top: 1px solid var(--fine);
-  }
-
-  .flow-stack {
-    @extend %reset-list;
-
-    display: flex;
-    flex-direction: column;
-    position: relative;
-
-    // The vertical rail joining the step numbers.
-    &::before {
-      content: '';
-      position: absolute;
-      left: 20px;
-      top: 22px;
-      bottom: 22px;
-      width: 1px;
-      background: $flow-line;
-    }
-  }
-
-  .flow-step {
-    display: grid;
-    grid-template-columns: 42px 1fr;
-    gap: $space-xs;
-    align-items: center;
-    min-height: 58px;
-    position: relative;
-
-    span {
-      width: 40px;
-      height: 40px;
-      border: 1px solid $flow-line;
-      background: $zone-bg;
-      display: grid;
-      place-items: center;
-      font-family: var(--mono);
-      font-size: $type-micro;
-      color: var(--teal-text);
-      z-index: 1;
-    }
-
-    strong {
-      border: 1px solid var(--fine);
-      background: var(--surface);
-      padding: 16px $space-sm;
-      font-size: 15px;
-      font-weight: 650;
-    }
   }
 
   .ai-two-col {

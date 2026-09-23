@@ -11,10 +11,11 @@ const numbered = (items: readonly string[]) => items.map((_, i) => String(i + 1)
 test('ai section flows, pills and lists have the reference counts, in order', async ({ page }) => {
   await page.goto('/');
   const ai$ = section(page);
-  const devFlow = ai$.locator('ol.flow-stack > li');
-  await expect(devFlow).toHaveCount(9);
-  await expect(devFlow.locator('strong')).toHaveText(ai.devFlow);
-  await expect(devFlow.locator('span')).toHaveText(numbered(ai.devFlow));
+  // #34: the nine-step dev flow duplicated the build-story loop and is no
+  // longer rendered; ai.devFlow stays in site.ts as unrendered data.
+  await expect(ai$.locator('ol.flow-stack')).toHaveCount(0);
+  await expect(ai$.locator('.ai-dev-grid > *')).toHaveCount(1);
+  await expect(ai$.locator('.ai-dev-grid > .ai-dev-copy')).toHaveCount(1);
 
   const qaFlow = ai$.locator('ol.qa-flow > li');
   await expect(qaFlow).toHaveCount(8);
