@@ -5,9 +5,13 @@ import type { FindingsBreakdown, FindingsBreakdownCopy } from './types';
 
 export const fmtInt = (n: number): string => n.toLocaleString('en-US');
 
-/** "14 blocker/high · 114 medium · 341 low/style": the findings KPI sub-line. */
+/**
+ * "14 blocker/high · 114 medium · 341 low/style": the findings KPI sub-line.
+ * A no-break space keeps each number with its label when a narrow column wraps.
+ */
 export function fmtBreakdown(b: FindingsBreakdown, copy: FindingsBreakdownCopy): string {
-  return `${fmtInt(b.blocker)} ${copy.blocker} · ${fmtInt(b.medium)} ${copy.medium} · ${fmtInt(b.low)} ${copy.low}`;
+  const part = (n: number, label: string) => `${fmtInt(n)} ${label}`;
+  return `${part(b.blocker, copy.blocker)} · ${part(b.medium, copy.medium)} · ${part(b.low, copy.low)}`;
 }
 
 export function fmtUsd(v: number | null | undefined): string {

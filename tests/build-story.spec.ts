@@ -20,7 +20,9 @@ async function hydrated(page: Page): Promise<void> {
 }
 
 // The findings KPI's sub-lines on the card: the breakdown, then "n fixed before merge".
-const cardFindingsSubs = (page: Page) => trail(page).locator('dl > div').nth(2).locator('dd + dd').allTextContents();
+// No-break spaces (number to label) read as plain spaces here.
+const cardFindingsSubs = async (page: Page) =>
+  (await trail(page).locator('dl > div').nth(2).locator('dd + dd').allTextContents()).map((t) => t.replace(/ /g, ' '));
 
 const cardKpis = (page: Page) =>
   trail(page)
@@ -85,7 +87,7 @@ test('card KPIs equal the /build KPI row for the site dataset', async ({ page })
   // Same breakdown under both findings KPIs, and it adds up to the value.
   const summary = payload().datasets.site.summary;
   const subs = await cardFindingsSubs(page);
-  expect(subs[0]).toBe(tile('Review findings')[2]);
+  expect(subs[0]).toBe(tile('Review findings')[2].replace(/ /g, ' '));
   const parts = /^([\d,]+) \S+ · ([\d,]+) \S+ · ([\d,]+) \S+$/.exec(subs[0])!.slice(1).map((n) => Number(n.replace(/,/g, '')));
   expect(parts.reduce((a, n) => a + n, 0)).toBe(summary.findingsTotal);
   expect(parts[0]).toBe(summary.findingsBySeverity.blocker);
