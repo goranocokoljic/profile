@@ -155,6 +155,30 @@ export interface IssueMeta {
   prUrl: string | null;
 }
 
+/** The KPI sub-line's groups: critical + high, medium, low + style. */
+export interface FindingsBreakdown {
+  blocker: number;
+  medium: number;
+  low: number;
+}
+
+/** Copy for the breakdown, from site.ts `pages.build.findingsBreakdown`. */
+export interface FindingsBreakdownCopy {
+  blocker: string;
+  medium: string;
+  low: string;
+  fixed: string;
+}
+
+/** Review totals the exporter sums over review-cycles.jsonl. */
+export interface DatasetSummary {
+  /** The five severities plus the derived `blocker` (critical + high). */
+  findingsBySeverity: Findings & { blocker: number };
+  findingsTotal: number;
+  /** Absent when no cycle recorded dispositions. */
+  dispositions?: Dispositions;
+}
+
 export interface Dataset {
   label: string;
   frozen: boolean;
@@ -168,6 +192,7 @@ export interface Dataset {
   reviewCycles: ReviewCycle[];
   epics: Epic[];
   lessons: Lesson[];
+  summary: DatasetSummary;
   /** Site dataset only, keyed by issue number. */
   meta?: Record<string, IssueMeta>;
 }

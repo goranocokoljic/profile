@@ -3,11 +3,11 @@
 
 import { renderCostCard, renderPhasesCard, renderSevCard, renderTrendCard, type View } from './charts';
 import { h } from './dom';
-import { fmtDateTime, fmtDur, fmtInt, fmtUsd } from './format';
+import { fmtBreakdown, fmtDateTime, fmtDur, fmtInt, fmtUsd } from './format';
 import { renderLessons } from './lessons';
 import { renderEpics, renderRuns, type RunsState } from './runs';
-import { computeKpis, filterEpics, filterTasks, type OutcomeFilter, type Period } from './stats';
-import type { Dataset, Payload } from './types';
+import { computeKpis, filterEpics, filterTasks, findingsBreakdown, type OutcomeFilter, type Period } from './stats';
+import type { Dataset, FindingsBreakdownCopy, Payload } from './types';
 
 export type DatasetKey = keyof Payload['datasets'];
 
@@ -16,6 +16,8 @@ export interface DashboardCopy {
   datasetLabel: string;
   datasets: Record<DatasetKey, string>;
   empty: string;
+  findingsBreakdown: FindingsBreakdownCopy;
+  footnotes: { kpis: string; trend: Record<DatasetKey, string> };
 }
 
 export interface DashboardState extends RunsState {
@@ -31,6 +33,7 @@ export interface Slots {
   segPeriod: HTMLElement;
   segOutcome: HTMLElement;
   kpis: HTMLElement;
+  kpiNote: HTMLElement;
   charts: HTMLElement;
   cost: HTMLElement;
   trend: HTMLElement;
@@ -58,6 +61,7 @@ export function buildSkeleton(root: HTMLElement, copy: DashboardCopy): Slots {
     segPeriod: h('span', { class: 'seg', 'data-seg': 'period' }),
     segOutcome: h('span', { class: 'seg', 'data-seg': 'outcome' }),
     kpis: h('section', { class: 'kpis', 'aria-label': 'Totals' }),
+    kpiNote: h('p', { class: 'footnote kpi-note' }, copy.footnotes.kpis),
     charts: h('section', { class: 'grid' }),
     cost: card(),
     trend: card(),
@@ -83,6 +87,7 @@ export function buildSkeleton(root: HTMLElement, copy: DashboardCopy): Slots {
       slots.asof,
     ),
     slots.kpis,
+    slots.kpiNote,
     slots.empty,
     slots.charts,
     slots.runsTitle,
@@ -113,7 +118,7 @@ function renderSeg<T extends string>(
   }
 }
 
-function renderKpis(el: HTMLElement, ds: Dataset, tasks: Dataset['tasks']): void {
+function renderKpis(el: HTMLElement, ds: Dataset, tasks: Dataset['tasks'], breakdown: FindingsBreakdownCopy): void {
   const k = computeKpis(tasks);
   // A dataset with no runs at all shows dashes, not zeros.
   const none = ds.tasks.length === 0;
@@ -124,7 +129,7 @@ function renderKpis(el: HTMLElement, ds: Dataset, tasks: Dataset['tasks']): void
     { label: 'Billed cost', value: v(fmtUsd(k.cost)), sub: 'sum of billed_cost_usd' },
     { label: 'Wall time', value: v(fmtDur(k.wall)), sub: 'sum across runs' },
     { label: 'Median cost / ok run', value: fmtUsd(k.medCost), sub: k.ok + ' ok runs' },
-    { label: 'Review findings', value: v(fmtInt(k.findings)), sub: 'caught across all cycles' },
+    { label: 'Review findings', value: v(fmtInt(k.findings)), sub: v(fmtBreakdown(findingsBreakdown(k.bySeverity), breakdown)) },
   ];
   el.textContent = '';
   for (const t of tiles) {
@@ -166,14 +171,14 @@ export function renderAll(slots: Slots, payload: Payload, state: DashboardState,
   );
 
   const tasks = filterTasks(ds.tasks, state.period, state.outcome);
-  renderKpis(slots.kpis, ds, tasks);
+  renderKpis(slots.kpis, ds, tasks, copy.findingsBreakdown);
 
   const empty = ds.tasks.length === 0;
   slots.empty.hidden = !empty;
   for (const el of [slots.charts, slots.runsTitle, slots.runs]) el.hidden = empty;
   if (!empty) {
     renderCostCard(slots.cost, tasks, view);
-    renderTrendCard(slots.trend, tasks, view);
+    renderTrendCard(slots.trend, tasks, view, copy.footnotes.trend[state.dataset]);
     renderPhasesCard(slots.phases, tasks, view);
     renderSevCard(slots.sev, tasks, view);
     renderRuns(slots.runs, tasks, ds.meta, state, view);

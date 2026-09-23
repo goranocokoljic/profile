@@ -15,10 +15,12 @@ function task(over: Partial<Task> = {}): Task {
 
 const info = { count: 0, skipped: 0, mtime: null };
 
-function dataset(tasks: Task[], meta: Dataset['meta'] = {}): Dataset {
+const noFindings = { findingsBySeverity: { critical: 0, high: 0, medium: 0, low: 0, style: 0, blocker: 0 }, findingsTotal: 0 };
+
+function dataset(tasks: Task[], meta: Dataset['meta'] = {}, summary: Dataset['summary'] = noFindings): Dataset {
   return {
     label: 'site', frozen: false, files: { tasks: info, reviewCycles: info, epics: info, lessons: info },
-    tasks, reviewCycles: [], epics: [], lessons: [], meta,
+    tasks, reviewCycles: [], epics: [], lessons: [], summary, meta,
   };
 }
 
@@ -27,7 +29,8 @@ const review = (n: number): Task['review'] => ({ cycles_run: 1, max_cycles: 3, t
 
 test('an empty dataset has zero totals, no latest run and no recent runs', () => {
   expect(summarize(dataset([]))).toEqual({
-    tasksCompleted: 0, successfulRuns: 0, findings: 0, wallSec: 0, billedUsd: 0, latest: null, recent: [],
+    tasksCompleted: 0, successfulRuns: 0, findings: 0, breakdown: { blocker: 0, medium: 0, low: 0 }, fixed: null,
+    wallSec: 0, billedUsd: 0, latest: null, recent: [],
   });
 });
 
@@ -80,4 +83,20 @@ test(`recent holds at most ${RECENT_RUNS} runs, newest first`, () => {
   const recent = summarize(dataset(tasks)).recent;
   expect(recent.map((r) => r.issue)).toEqual([7, 6, 5, 4, 3]);
   expect(recent[1]).toEqual({ issue: 6, attempt: 1, outcome: 'failed', billedUsd: 6 });
+});
+
+test('the findings breakdown groups the per-task severities the /build KPI sums', () => {
+  const r = (critical: number, high: number, medium: number, low: number, style: number): Task['review'] => ({
+    cycles_run: 1, max_cycles: 3, total_review_sec: 1, total_fix_sec: 1, findings_total: { critical, high, medium, low, style },
+  });
+  const s = summarize(dataset([task({ review: r(1, 2, 3, 4, 5) }), task({ issue: 2, review: r(0, 1, 0, 0, 1) })]));
+  expect(s.breakdown).toEqual({ blocker: 4, medium: 3, low: 10 });
+  expect(s.breakdown.blocker + s.breakdown.medium + s.breakdown.low).toBe(s.findings);
+});
+
+test('fixed comes from the exporter summary dispositions, null when none were recorded', () => {
+  const dispositions = { fixed: 18, rejected_intentional: 0, rejected_wrong: 1, deferred: 35 };
+  expect(summarize(dataset([task()], {}, { ...noFindings, dispositions })).fixed).toBe(18);
+  expect(summarize(dataset([task()], {}, { ...noFindings, dispositions: { ...dispositions, fixed: 0 } })).fixed).toBe(0);
+  expect(summarize(dataset([task()])).fixed).toBeNull();
 });

@@ -2,8 +2,8 @@
 // site dataset. Pure: no DOM, no file access. Totals come from computeKpis so
 // the card and the /build KPI row cannot disagree.
 
-import { computeKpis } from './stats';
-import type { Dataset, Outcome } from './types';
+import { computeKpis, findingsBreakdown } from './stats';
+import type { Dataset, FindingsBreakdown, Outcome } from './types';
 
 export const RECENT_RUNS = 5;
 
@@ -32,6 +32,10 @@ export interface BuildSummary {
   /** Runs with outcome ok; the "N ok" on the /build Runs tile. */
   successfulRuns: number;
   findings: number;
+  /** The findings KPI's sub-line, from the same per-task totals as `findings`. */
+  breakdown: FindingsBreakdown;
+  /** Findings the fixer fixed before merge; `null` when no cycle recorded dispositions. */
+  fixed: number | null;
   wallSec: number;
   billedUsd: number;
   /** `null` when no run is recorded. */
@@ -50,6 +54,8 @@ export function summarize(ds: Dataset): BuildSummary {
     tasksCompleted: new Set(ds.tasks.filter((t) => t.outcome === 'ok').map((t) => t.issue)).size,
     successfulRuns: k.ok,
     findings: k.findings,
+    breakdown: findingsBreakdown(k.bySeverity),
+    fixed: ds.summary.dispositions?.fixed ?? null,
     wallSec: k.wall,
     billedUsd: k.cost,
     latest: last

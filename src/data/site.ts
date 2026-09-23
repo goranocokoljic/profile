@@ -114,7 +114,15 @@ export const site = SiteSchema.parse({
       ],
       noscript:{ caption:'Runs on this site. Turn on JavaScript for the charts and the Toprope dataset.', columns:{ issue:'Issue', outcome:'Outcome', duration:'Duration', billed:'Billed' } },
       empty:'No runs recorded yet — the first tr-harness run on this repository will appear here.',
-      datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' }
+      datasetLabel:'Dataset', datasets:{ site:'This site', toprope:'tr-harness on Toprope' },
+      findingsBreakdown:{ blocker:'blocker/high', medium:'medium', low:'low/style', fixed:'fixed before merge' },
+      footnotes:{
+        kpis:'A finding is one item raised by an independent reviewer agent in one review cycle. Counts include items later judged non-issues; severities are the reviewer’s.',
+        trend:{
+          site:'Trend over a small number of runs of different sizes; a signal, not a measurement of the review KB’s effect.',
+          toprope:'Falling trend across 172 runs, consistent with the review knowledge base taking effect.'
+        }
+      }
     },
     shareImageAlt:'Goran Ocokoljić'
   },

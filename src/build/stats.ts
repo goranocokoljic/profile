@@ -2,7 +2,7 @@
 // functions so they can be unit-tested against the reference. Pure: no DOM.
 
 import { dayKey, median } from './format.ts';
-import type { Epic, Findings, PhaseName, Task } from './types';
+import type { Epic, Findings, FindingsBreakdown, PhaseName, Task } from './types';
 
 export type Period = 'all' | '90' | '30' | '7';
 export type OutcomeFilter = 'all' | 'ok' | 'problems';
@@ -54,6 +54,7 @@ export interface Kpis {
   wall: number;
   medCost: number | null;
   findings: number;
+  bySeverity: Findings;
 }
 
 export function computeKpis(tasks: Task[]): Kpis {
@@ -67,7 +68,18 @@ export function computeKpis(tasks: Task[]): Kpis {
     wall: tasks.reduce((a, t) => a + (t.total_sec || 0), 0),
     medCost: median(ok.map((t) => t.billed_cost_usd).filter((v) => v != null)),
     findings: tasks.reduce((a, t) => a + findingsSum(t.review?.findings_total), 0),
+    bySeverity: sumSeverities(tasks.map((t) => t.review?.findings_total)),
   };
+}
+
+export function sumSeverities(list: (Findings | null | undefined)[]): Findings {
+  const sums: Findings = { critical: 0, high: 0, medium: 0, low: 0, style: 0 };
+  for (const f of list) if (f) for (const k of SEVERITIES) sums[k] += f[k] || 0;
+  return sums;
+}
+
+export function findingsBreakdown(f: Findings): FindingsBreakdown {
+  return { blocker: f.critical + f.high, medium: f.medium, low: f.low + f.style };
 }
 
 /* ---------------------------------------------------- daily grouping */
@@ -126,11 +138,7 @@ export interface SevDay {
 export function severityByDay(tasks: TaskRow[]): SevDay[] {
   const byDay = groupByDay(tasks);
   return dayRange(tasks).map((date) => {
-    const sums: Findings = { critical: 0, high: 0, medium: 0, low: 0, style: 0 };
-    for (const t of byDay.get(dayKey(date)) ?? []) {
-      const f = t.review?.findings_total;
-      if (f) for (const k of SEVERITIES) sums[k] += f[k] || 0;
-    }
+    const sums = sumSeverities((byDay.get(dayKey(date)) ?? []).map((t) => t.review?.findings_total));
     return { date, sums, total: findingsSum(sums) };
   });
 }

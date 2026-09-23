@@ -39,6 +39,17 @@
     font-size: clamp(14px, 3.8cqi, 30px);
     white-space: nowrap;
   }
+
+  // The findings breakdown under its value: small muted type that wraps
+  // inside the column, as the card's other secondary text.
+  .sub {
+    margin-top: 6px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--muted);
+    white-space: normal;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .latest {
