@@ -15,7 +15,7 @@ window.siteCopy = {
       {title:'Unify what has grown organically',body:'I did exactly this for a portfolio of 20+ news portals: repeated per-site implementations became one shared Vue/Nuxt platform, evolved underneath products serving millions of pageviews a day. The routing, component and deployment conventions are what carried the teams; those transfer.'},
       {title:'“Far beyond insurance”',body:'A nomad in Bali with a stomach bug does not want a claims form, they want a doctor on a call within the hour. I have built that product. VisMedic was a telehealth platform used by real doctors and patients through private healthcare providers.'},
       {title:'Let the whole team ship safely',body:'I am building Toprope, a product that monitors and improves AI adoption in engineering organisations, and tr-harness, the autonomous harness that builds it. Independent review, state verification, bounded retries and telemetry are the same guardrails that let non-engineers contribute without lowering the bar.'},
-      {title:'AI agents, daily, with evidence',body:'Claude Code every day. On my previous project tr-harness delivered 137 GitHub issues in 172 recorded runs with cost and outcome per task; this site is its next project. Every number is on the build page.'}
+      {title:'AI agents, daily, with evidence',body:'Claude Code every day. On my previous project tr-harness closed 185 GitHub issues in 136 merged pull requests in eleven weeks, 172 of the runs recorded with cost and outcome per task; this site is its next project. Every number is on the build page.'}
     ]
   },
   selected: { label:'SELECTED WORK', items:[
