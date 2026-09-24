@@ -70,8 +70,11 @@ test('"never the hard part" does not appear anywhere in dist/', () => {
 // against a findings total from all of them. It must not ship, and src/ may
 // name it only in a comment that explains the removal. The payload's recorded
 // review lessons may quote it as history (#33's lesson does); that is data,
-// not UI, so the lessons are taken out before the check. The /build page
-// inlines the same payload, which the check reads from data.json instead.
+// not UI, so the lessons are taken out before the check. Recorded issue
+// titles are data too: #39's own title names the line, and the homepage
+// build-record card shows the latest run's title, so those titles are taken
+// out as well. The /build page inlines the same payload, which the check
+// reads from data.json instead.
 const FIXED_LINE = /fixed before merge/i;
 const PAYLOAD_TAG = /<script type="application\/json" id="build-data">[\s\S]*?<\/script>/;
 
@@ -81,6 +84,13 @@ const withoutLessons = (json: string): string => {
   return JSON.stringify(payload);
 };
 
+const TITLES = Object.values(JSON.parse(readFileSync('data/build/site/meta.json', 'utf8')) as Record<string, { title: string }>)
+  .map((m) => m.title)
+  .filter((t) => FIXED_LINE.test(t));
+// Astro writes an apostrophe as &#39; in island props and &#x27; in text.
+const withoutTitles = (text: string): string =>
+  TITLES.reduce((out, t) => out.split(t).join(''), text.replace(/&#39;|&#x27;/g, "'"));
+
 test('"fixed before merge" does not appear on either page or anywhere in dist/', () => {
   const files = distTextFiles();
   expect(files).toEqual(expect.arrayContaining(['index.html', join('build', 'index.html'), join('build', 'data.json')]));
@@ -88,7 +98,7 @@ test('"fixed before merge" does not appear on either page or anywhere in dist/',
   for (const f of files) {
     const raw = readFileSync(join('dist', f), 'utf8');
     const text = f === join('build', 'data.json') ? withoutLessons(raw) : raw.replace(PAYLOAD_TAG, '');
-    expect(text, f).not.toMatch(FIXED_LINE);
+    expect(withoutTitles(text), f).not.toMatch(FIXED_LINE);
   }
 });
 
@@ -97,6 +107,13 @@ test('the lesson filter removes only the lessons', () => {
   expect(withoutLessons(payload)).not.toMatch(FIXED_LINE);
   expect(withoutLessons(payload)).toContain('kept');
   expect(withoutLessons(payload.replace('kept', 'fixed before merge'))).toMatch(FIXED_LINE);
+});
+
+test('the title filter removes only recorded issue titles', () => {
+  expect(TITLES.length).toBeGreaterThan(0);
+  const title = TITLES[0].replace(/'/g, '&#x27;');
+  expect(withoutTitles(`<a>#39 ${title}</a>`)).not.toMatch(FIXED_LINE);
+  expect(withoutTitles(`<a>#39 ${title}</a><p>3 fixed before merge</p>`)).toMatch(FIXED_LINE);
 });
 
 const COMMENT_LINE = /^\s*(\/\/|\/?\*)/;

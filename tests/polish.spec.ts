@@ -263,6 +263,74 @@ for (const dpr of [1.25, 1.5]) {
   });
 }
 
+// #41 defect: a grey 34 × 1 px bar (.build-note-rule) painted between the hero
+// buttons and the build note read as a stray line under "See the work". The
+// band from the bottom of the lowest hero action (a.button-primary, or the
+// actions that wrap below it at 390 and 1024 px, underline included) to the top of the note text,
+// across the note's width, must be only the page background, pixel for pixel.
+for (const dpr of [1, 1.25]) {
+  test.describe(`deviceScaleFactor ${dpr}`, () => {
+    test.use({ deviceScaleFactor: dpr });
+
+    for (const scheme of SCHEMES) {
+      for (const width of WIDTHS) {
+        test(`no line between the hero buttons and the build note (${scheme}) at ${width}px`, async ({ page }) => {
+          await page.emulateMedia({ colorScheme: scheme });
+          await page.setViewportSize({ width, height: 1000 });
+          await page.goto('/', { waitUntil: 'networkidle' });
+          const band = await page.evaluate(() => {
+            const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+            // An underlined link paints its underline text-underline-offset
+            // (plus its thickness) below its own box.
+            const actions = [...document.querySelectorAll('.hero-actions > *')].map((a) => {
+              const cs = getComputedStyle(a);
+              const underline = cs.textDecorationLine.includes('underline') ? parseFloat(cs.textUnderlineOffset) + 3 : 0;
+              return a.getBoundingClientRect().bottom + underline;
+            });
+            const note = box('.build-note');
+            let el: Element | null = document.querySelector('.build-note');
+            let bg = 'rgba(0, 0, 0, 0)';
+            while (el && /rgba\(.*, 0\)$|transparent/.test(bg)) {
+              bg = getComputedStyle(el).backgroundColor;
+              el = el.parentElement;
+            }
+            return {
+              primaryBottom: box('.hero .button-primary').bottom + scrollY,
+              top: Math.max(...actions) + scrollY,
+              bottom: box('.build-note > span:last-child').top + scrollY,
+              left: note.left,
+              right: Math.min(note.right, document.documentElement.clientWidth),
+              bg,
+            };
+          });
+          expect(band.top).toBeGreaterThanOrEqual(band.primaryBottom);
+          expect(band.bottom - band.top, 'band height').toBeGreaterThan(10);
+          const want = rgb(band.bg);
+          const { data, info } = await sharp(
+            await page.screenshot({ fullPage: true, clip: { x: 0, y: 0, width, height: Math.ceil(band.bottom) + 1 } }),
+          )
+            .raw()
+            .toBuffer({ resolveWithObject: true });
+          const x0 = Math.ceil(band.left * dpr);
+          const x1 = Math.floor(band.right * dpr);
+          const off: string[] = [];
+          for (let row = Math.ceil(band.top * dpr); row < Math.floor(band.bottom * dpr); row++) {
+            for (let x = x0; x < x1; x++) {
+              const i = (row * info.width + x) * info.channels;
+              const got = [data[i], data[i + 1], data[i + 2]];
+              if (got.some((v, c) => Math.abs(v - want[c]) > 2)) {
+                off.push(`row ${row}: rgb(${got}) at x ${x}, not rgb(${want})`);
+                break;
+              }
+            }
+          }
+          expect(off).toEqual([]);
+        });
+      }
+    }
+  });
+}
+
 test('CI runs in the Playwright image the Linux baselines are rendered in', () => {
   const { version } = JSON.parse(readFileSync('node_modules/@playwright/test/package.json', 'utf8')) as { version: string };
   const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
